@@ -9,24 +9,40 @@
   <body>
     <main id="game" class="game">
       <div class="background" aria-hidden="true">
-        <div class="parallax-layer sky-layer"></div>
-        <div class="parallax-layer buildings-layer"></div>
-        <div class="parallax-layer ground-layer"></div>
+        <div class="parallax-layer city-layer city-layer-1">
+          <div class="city-track">
+            <img src="assets/backgrounds/cyberpunk/layer-1-strip.png" alt="" />
+            <img src="assets/backgrounds/cyberpunk/layer-1-strip.png" alt="" />
+          </div>
+        </div>
+        <div class="parallax-layer city-layer city-layer-3">
+          <div class="city-track">
+            <img src="assets/backgrounds/cyberpunk/layer-3-strip.png" alt="" />
+            <img src="assets/backgrounds/cyberpunk/layer-3-strip.png" alt="" />
+          </div>
+        </div>
+        <div class="parallax-layer city-layer city-layer-5">
+          <div class="city-track">
+            <img src="assets/backgrounds/cyberpunk/layer-5-strip.png" alt="" />
+            <img src="assets/backgrounds/cyberpunk/layer-5-strip.png" alt="" />
+          </div>
+        </div>
       </div>
 
       <div id="playArea" class="play-area" aria-label="Zona de juego">
-        <div id="player" class="player" aria-hidden="true">
-          <div class="player-shadow"></div>
-          <div class="player-head"></div>
-          <div class="player-body"></div>
-          <div class="player-arm"></div>
-          <div class="player-gun"></div>
+        <div id="player" class="player" data-animation="idle" aria-hidden="true">
+          <div class="player-sprite"></div>
           <div id="muzzle" class="muzzle"></div>
           <div class="muzzle-flash"></div>
-          <div class="player-leg player-leg-left"></div>
-          <div class="player-leg player-leg-right"></div>
         </div>
       </div>
+
+      <img
+        class="interface-overlay"
+        src="assets/ui/news-interface-presaux.png"
+        alt=""
+        aria-hidden="true"
+      />
 
       <header class="hud">
         <div class="stats">

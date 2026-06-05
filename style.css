@@ -1,5 +1,14 @@
+@font-face {
+  font-family: "Automatron";
+  src: url("assets/fonts/automatron-numbersdec.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 html,
@@ -10,10 +19,14 @@ body {
   overflow: hidden;
 }
 
+html {
+  font-family: "Automatron", "Courier New", Courier, monospace;
+}
+
 body {
   color: #fff8e8;
   background: #11161f;
-  font-family: "Courier New", Courier, monospace;
+  font-family: inherit;
 }
 
 button {
@@ -22,23 +35,16 @@ button {
 
 /* Escena a pantalla completa, pensada para tablet en horizontal: 1340 x 800 aprox. */
 .game {
-  --sky-scroll: 0px;
-  --building-scroll: 0px;
-  --ground-scroll: 0px;
-
   position: relative;
   width: 100vw;
   height: 100dvh;
   min-height: 100vh;
   overflow: hidden;
-  background: #83c7e8;
+  background: #05030d;
   image-rendering: pixelated;
+  isolation: isolate;
   touch-action: none;
   user-select: none;
-}
-
-.game.is-shaking {
-  animation: screenShake 0.18s steps(2);
 }
 
 .background,
@@ -51,604 +57,707 @@ button {
 
 .background {
   z-index: 1;
+  background: #05030d;
 }
 
-/* Capa 1: cielo. Se mueve muy lento para dar profundidad. */
-.sky-layer {
-  z-index: 1;
-  background:
-    linear-gradient(180deg, #6fbee7 0%, #bfe3e4 54%, #f1c174 78%, #be7749 100%);
+.city-layer {
+  image-rendering: pixelated;
+  contain: strict;
 }
 
-.sky-layer::before,
-.sky-layer::after,
-.buildings-layer::before,
-.buildings-layer::after,
-.ground-layer::before,
-.ground-layer::after {
-  content: "";
+.city-track {
   position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: max-content;
+  height: 100%;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.city-track img {
+  display: block;
+  flex: 0 0 auto;
+  width: auto;
+  height: 100%;
+  image-rendering: pixelated;
+  user-select: none;
   pointer-events: none;
 }
 
-.sky-layer::before {
-  top: 54px;
-  right: 0;
-  left: 0;
-  height: 160px;
-  background-image:
-    linear-gradient(90deg, transparent 0 38px, #f7f1dc 39px 104px, transparent 105px 290px),
-    linear-gradient(90deg, transparent 0 120px, rgba(255, 255, 255, 0.78) 121px 174px, transparent 175px 410px);
-  background-position:
-    var(--sky-scroll) 0,
-    calc(var(--sky-scroll) + 210px) 72px;
-  background-repeat: repeat-x;
-  background-size:
-    430px 56px,
-    520px 48px;
-  opacity: 0.95;
-}
-
-.sky-layer::after {
-  right: 0;
-  bottom: 142px;
-  left: 0;
-  height: 210px;
-  background-image:
-    linear-gradient(135deg, transparent 0 43%, #7c8d72 44% 58%, transparent 59%),
-    linear-gradient(45deg, transparent 0 44%, #566b67 45% 63%, transparent 64%);
-  background-position:
-    var(--sky-scroll) bottom,
-    calc(var(--sky-scroll) + 150px) bottom;
-  background-repeat: repeat-x;
-  background-size:
-    360px 170px,
-    420px 150px;
-  opacity: 0.82;
-}
-
-/* Capa 2: edificios. Velocidad media para que parezca que avanzamos. */
-.buildings-layer {
-  z-index: 2;
-  bottom: 142px;
-  height: 430px;
-  top: auto;
-  background-image:
-    linear-gradient(90deg, transparent 0 30px, #4c5158 31px 144px, transparent 145px 620px),
-    linear-gradient(90deg, transparent 0 172px, #725b47 173px 286px, transparent 287px 620px),
-    linear-gradient(90deg, transparent 0 330px, #344d59 331px 430px, transparent 431px 620px),
-    linear-gradient(90deg, transparent 0 472px, #8b4f45 473px 588px, transparent 589px 620px);
-  background-position:
-    var(--building-scroll) bottom,
-    var(--building-scroll) bottom,
-    var(--building-scroll) bottom,
-    var(--building-scroll) bottom;
-  background-repeat: repeat-x;
-  background-size:
-    620px 330px,
-    620px 420px,
-    620px 278px,
-    620px 245px;
-}
-
-.buildings-layer::before {
-  inset: 0;
-  background-image:
-    linear-gradient(90deg, transparent 0 58px, rgba(255, 229, 112, 0.88) 59px 72px, transparent 73px 620px),
-    linear-gradient(90deg, transparent 0 208px, rgba(255, 229, 112, 0.72) 209px 224px, transparent 225px 620px),
-    linear-gradient(90deg, transparent 0 362px, rgba(52, 230, 245, 0.82) 363px 382px, transparent 383px 620px),
-    linear-gradient(90deg, transparent 0 514px, rgba(255, 229, 112, 0.78) 515px 532px, transparent 533px 620px),
-    repeating-linear-gradient(0deg, transparent 0 32px, rgba(0, 0, 0, 0.28) 33px 39px, transparent 40px 58px);
-  background-position:
-    var(--building-scroll) bottom,
-    var(--building-scroll) bottom,
-    var(--building-scroll) bottom,
-    var(--building-scroll) bottom,
-    0 bottom;
-  background-repeat: repeat;
-  background-size:
-    620px 58px,
-    620px 58px,
-    620px 58px,
-    620px 58px,
-    100% 58px;
-  mix-blend-mode: screen;
+.city-layer-1 {
+  z-index: 1;
   opacity: 0.72;
 }
 
-.buildings-layer::after {
-  top: 64px;
-  right: 0;
-  left: 0;
-  height: 170px;
-  background-image:
-    linear-gradient(90deg, transparent 0 64px, #ffd348 65px 142px, transparent 143px 920px),
-    linear-gradient(90deg, transparent 0 310px, #e94b42 311px 348px, transparent 349px 920px),
-    linear-gradient(90deg, transparent 0 520px, #3ac8ff 521px 612px, transparent 613px 920px),
-    linear-gradient(90deg, transparent 0 720px, #66d448 721px 768px, transparent 769px 920px);
-  background-position:
-    var(--building-scroll) 0,
-    var(--building-scroll) 54px,
-    var(--building-scroll) 20px,
-    var(--building-scroll) 92px;
-  background-repeat: repeat-x;
-  background-size:
-    920px 18px,
-    920px 86px,
-    920px 22px,
-    920px 70px;
-  filter: drop-shadow(0 0 8px rgba(255, 243, 126, 0.65));
-}
-
-/* Capa 3: suelo. Es la capa mas rapida porque esta cerca de la camara. */
-.ground-layer {
+.city-layer-3 {
   z-index: 3;
-  top: auto;
+  opacity: 0.86;
+}
+
+.city-layer-5 {
+  z-index: 5;
+  opacity: 1;
+}
+
+.city-layer-5::before {
+  content: "";
+  position: absolute;
+  right: 0;
   bottom: 0;
+  left: 0;
+  z-index: 2;
   height: 150px;
-  background-image:
-    linear-gradient(180deg, #3fae50 0 16px, #223526 17px 28px, #6d4b2f 29px 100%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 42px, rgba(0, 0, 0, 0.18) 43px 48px, transparent 49px 112px);
-  background-position:
-    0 0,
-    var(--ground-scroll) 0;
+  background:
+    linear-gradient(180deg, #182235 0 3px, #0d111b 4px 28px, #15101a 29px 100%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 46px, transparent 47px 118px);
   background-repeat: repeat-x;
-  background-size:
-    100% 100%,
-    224px 100%;
-  border-top: 4px solid #1a321e;
-  box-shadow: inset 0 18px #245c31, inset 0 -12px #382a22;
-}
-
-.ground-layer::before {
-  top: 34px;
-  right: 0;
-  left: 0;
-  height: 54px;
-  background-image:
-    repeating-linear-gradient(90deg, #805a38 0 52px, #5c3d29 53px 58px, #8a6544 59px 108px),
-    repeating-linear-gradient(0deg, transparent 0 24px, rgba(0, 0, 0, 0.3) 25px 29px);
-  background-position:
-    var(--ground-scroll) 0,
-    0 0;
-  background-size:
-    216px 54px,
-    100% 54px;
-  border-top: 4px solid #9d744d;
-}
-
-.ground-layer::after {
-  top: 92px;
-  right: 0;
-  left: 0;
-  height: 28px;
-  background-image:
-    linear-gradient(90deg, transparent 0 28px, #252d35 29px 74px, transparent 75px 170px),
-    linear-gradient(90deg, transparent 0 112px, #d7c96b 113px 146px, transparent 147px 260px);
-  background-position:
-    var(--ground-scroll) 0,
-    calc(var(--ground-scroll) + 80px) 12px;
-  background-repeat: repeat-x;
-  background-size:
-    340px 12px,
-    380px 6px;
+  background-size: 100% 100%, 236px 100%;
+  border-top: 2px solid #24344e;
+  pointer-events: none;
 }
 
 .play-area {
   position: absolute;
   inset: 0;
-  z-index: 10;
+  z-index: 20;
   overflow: hidden;
+  isolation: isolate;
   touch-action: none;
+}
+
+.interface-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
 }
 
 .hud {
   position: absolute;
-  z-index: 30;
-  top: max(12px, env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
-  left: max(12px, env(safe-area-inset-left));
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+  z-index: 60;
+  top: calc(env(safe-area-inset-top) + clamp(58px, 8.4vh, 92px));
+  right: max(clamp(20px, 2vw, 38px), env(safe-area-inset-right));
+  left: clamp(620px, 48.4vw, 930px);
+  height: clamp(34px, 4.3vh, 48px);
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.95fr;
+  align-items: center;
+  gap: clamp(8px, 0.9vw, 18px);
   pointer-events: none;
 }
 
 .stats {
-  display: flex;
-  gap: 8px;
-  pointer-events: auto;
-}
-
-.stat,
-.restart-button {
-  border: 2px solid #fff8e8;
-  background: #141821;
-  box-shadow: 4px 4px 0 #000;
+  display: contents;
 }
 
 .stat {
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
   align-items: center;
-  column-gap: 8px;
-  min-width: 124px;
-  height: 44px;
-  padding: 0 10px;
+  justify-content: center;
+  gap: clamp(6px, 0.6vw, 12px);
+  min-width: 0;
+  height: 100%;
+  padding: 0 clamp(6px, 1vw, 16px);
+  border: 0;
+  background: transparent;
+  text-shadow: 0 2px 0 #23020c;
+  white-space: nowrap;
+  pointer-events: auto;
 }
 
 .stat span {
-  color: #fff8e8;
-  font-size: 14px;
-  font-weight: 800;
+  color: #fff6a8;
+  font-size: clamp(11px, 1vw, 18px);
+  letter-spacing: 0;
+  line-height: 1;
   text-transform: uppercase;
 }
 
 .stat strong {
-  color: #ffd348;
-  font-size: 24px;
+  color: #fff35c;
+  font-size: clamp(22px, 2.2vw, 38px);
+  font-weight: 400;
   line-height: 1;
 }
 
 .restart-button {
-  min-width: 116px;
-  height: 44px;
-  padding: 0 12px;
-  color: #11161f;
-  background: #ffd348;
-  font-size: 16px;
-  font-weight: 900;
+  min-width: 136px;
+  height: 46px;
+  padding: 0 16px;
+  border: 2px solid #f26722;
+  border-radius: 999px;
+  color: #fff35c;
+  background: linear-gradient(180deg, #4b0618 0%, #ca1738 68%, #7d0a2a 100%);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 2px 0 #23020c;
+  white-space: nowrap;
   cursor: pointer;
   pointer-events: auto;
   touch-action: manipulation;
 }
 
+.hud .restart-button {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: clamp(12px, 1vw, 18px);
+  text-shadow: 0 2px 0 #23020c;
+}
+
 .restart-button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 #000;
+  transform: translateY(2px);
+}
+
+.hud .restart-button:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
 .player {
   position: absolute;
-  left: 9%;
-  bottom: 122px;
-  width: 80px;
-  height: 112px;
+  left: 6.5%;
+  bottom: 150px;
+  z-index: 20;
+  width: var(--sprite-frame-width);
+  height: var(--sprite-frame-height);
+  --sprite-url: url("assets/destroyer/Idle.png");
+  --sprite-frame-width: 128px;
+  --sprite-frame-height: 128px;
+  --sprite-frames: 5;
+  --sprite-steps: 4;
+  --sprite-end: -512px;
+  --sprite-strip-width: 640px;
+  --sprite-duration: 0.75s;
+  --player-scale: 1.55;
+  transform: scale(var(--player-scale));
+  transform-origin: left bottom;
   pointer-events: none;
 }
 
 .player.is-running {
-  animation: playerRunBob 0.34s steps(2) infinite;
+  animation: playerRunBob 0.42s ease-in-out infinite alternate;
 }
 
-.player-shadow {
+.player-sprite {
   position: absolute;
-  right: 0;
-  bottom: -14px;
+  inset: 0;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+
+.player-sprite::before {
+  content: "";
+  position: absolute;
+  top: 0;
   left: 0;
-  height: 10px;
-  background: rgba(0, 0, 0, 0.48);
+  width: var(--sprite-strip-width);
+  height: var(--sprite-frame-height);
+  background-image: var(--sprite-url);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  will-change: transform;
+  backface-visibility: hidden;
+  animation: destroyerFrames var(--sprite-duration) steps(var(--sprite-steps)) infinite;
 }
 
-.player-head {
-  position: absolute;
-  top: 2px;
-  left: 21px;
-  width: 25px;
-  height: 24px;
-  background: #f0c492;
-  box-shadow: inset -7px 0 #8e674f, 0 0 0 3px #11161f;
+.player[data-animation="idle"] {
+  --sprite-url: url("assets/destroyer/Idle.png");
+  --sprite-frames: 5;
+  --sprite-steps: 4;
+  --sprite-end: -512px;
+  --sprite-strip-width: 640px;
+  --sprite-duration: 0.75s;
 }
 
-.player-body {
-  position: absolute;
-  top: 30px;
-  left: 19px;
-  width: 31px;
-  height: 42px;
-  background: #61733c;
-  border: 3px solid #11161f;
-  box-shadow: inset 6px 0 #b8c66c;
+.player[data-animation="walk"] {
+  --sprite-url: url("assets/destroyer/Walk.png");
+  --sprite-frames: 8;
+  --sprite-steps: 7;
+  --sprite-end: -896px;
+  --sprite-strip-width: 1024px;
+  --sprite-duration: 0.72s;
 }
 
-.player-arm {
-  position: absolute;
-  top: 39px;
-  left: 43px;
-  width: 26px;
-  height: 10px;
-  background: #f0c492;
-  border: 3px solid #11161f;
+.player[data-animation="shot1"] {
+  --sprite-url: url("assets/destroyer/Shot_1.png");
+  --sprite-frames: 8;
+  --sprite-steps: 7;
+  --sprite-end: -896px;
+  --sprite-strip-width: 1024px;
+  --sprite-duration: 0.46s;
 }
 
-.player-gun {
-  position: absolute;
-  top: 39px;
-  left: 64px;
-  width: 32px;
-  height: 8px;
-  background: #11161f;
-  border-top: 2px solid #b8c2cb;
+.player[data-animation="shot2"] {
+  --sprite-url: url("assets/destroyer/Shot_2.png");
+  --sprite-frames: 8;
+  --sprite-steps: 7;
+  --sprite-end: -896px;
+  --sprite-strip-width: 1024px;
+  --sprite-duration: 0.46s;
+}
+
+.player[data-animation="attack1"] {
+  --sprite-url: url("assets/destroyer/Attack_1.png");
+  --sprite-frames: 4;
+  --sprite-steps: 3;
+  --sprite-end: -384px;
+  --sprite-strip-width: 512px;
+  --sprite-duration: 0.46s;
+}
+
+.player[data-animation="attack2"] {
+  --sprite-url: url("assets/destroyer/Attack_2.png");
+  --sprite-frames: 3;
+  --sprite-steps: 2;
+  --sprite-end: -256px;
+  --sprite-strip-width: 384px;
+  --sprite-duration: 0.43s;
+}
+
+.player[data-animation="hurt"] {
+  --sprite-url: url("assets/destroyer/Hurt.png");
+  --sprite-frames: 3;
+  --sprite-steps: 2;
+  --sprite-end: -256px;
+  --sprite-strip-width: 384px;
+  --sprite-duration: 0.34s;
+}
+
+.player[data-animation="dead"] {
+  --sprite-url: url("assets/destroyer/Dead.png");
+  --sprite-frames: 7;
+  --sprite-steps: 6;
+  --sprite-end: -768px;
+  --sprite-strip-width: 896px;
+  --sprite-duration: 0.88s;
+}
+
+.player[data-animation="enable"] {
+  --sprite-url: url("assets/destroyer/Enabling.png");
+  --sprite-frames: 3;
+  --sprite-steps: 2;
+  --sprite-end: -256px;
+  --sprite-strip-width: 384px;
+  --sprite-duration: 0.45s;
+}
+
+.player[data-animation="shutdown"] {
+  --sprite-url: url("assets/destroyer/Shutdown.png");
+  --sprite-frames: 5;
+  --sprite-steps: 4;
+  --sprite-end: -512px;
+  --sprite-strip-width: 640px;
+  --sprite-duration: 0.7s;
+}
+
+.player[data-animation="dead"] .player-sprite::before,
+.player[data-animation="attack1"] .player-sprite::before,
+.player[data-animation="attack2"] .player-sprite::before,
+.player[data-animation="enable"] .player-sprite::before,
+.player[data-animation="hurt"] .player-sprite::before,
+.player[data-animation="shutdown"] .player-sprite::before {
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
 }
 
 .muzzle {
   position: absolute;
-  top: 40px;
-  left: 95px;
+  top: 58px;
+  left: 113px;
   width: 4px;
   height: 4px;
 }
 
 .muzzle-flash {
   position: absolute;
-  top: 31px;
-  left: 96px;
+  display: none;
+  top: 46px;
+  left: 112px;
   width: 42px;
   height: 24px;
   background:
     linear-gradient(90deg, #fff8e8 0 12px, #ffd348 13px 28px, #ef4f3b 29px 42px),
     linear-gradient(0deg, transparent 0 7px, #fff8e8 8px 16px, transparent 17px 24px);
-  box-shadow: 20px 0 #ef4f3b, 0 0 22px #ffd348, 0 0 44px #ef4f3b;
   opacity: 0;
   transform-origin: left center;
 }
 
 .player.is-firing .muzzle-flash {
-  animation: muzzleFlash 0.14s linear;
-}
-
-.player-leg {
-  position: absolute;
-  top: 69px;
-  width: 12px;
-  height: 35px;
-  background: #334627;
-  border: 3px solid #11161f;
-}
-
-.player-leg-left {
-  left: 20px;
-}
-
-.player-leg-right {
-  left: 39px;
+  animation: none;
 }
 
 .player.is-hit {
   animation: playerHitFlash 0.26s steps(2);
-  filter: drop-shadow(0 0 14px #ef4f3b);
-}
-
-.player.is-running .player-leg-left {
-  animation: runLegLeft 0.34s steps(2) infinite;
-}
-
-.player.is-running .player-leg-right {
-  animation: runLegRight 0.34s steps(2) infinite;
 }
 
 .target {
   position: absolute;
   left: 0;
   top: 0;
-  width: 58px;
-  height: 94px;
-  z-index: 13;
+  width: 160px;
+  height: 160px;
+  --enemy-url: url("assets/infantryman/Idle.png");
+  --enemy-frame-width: 128px;
+  --enemy-frame-height: 128px;
+  --enemy-left: 16px;
+  --enemy-top: 32px;
+  --enemy-frames: 6;
+  --enemy-steps: 5;
+  --enemy-end: -640px;
+  --enemy-strip-width: 768px;
+  --enemy-duration: 0.76s;
+  --enemy-scale: 1.28;
+  z-index: 22;
   cursor: crosshair;
-  filter: drop-shadow(0 0 8px var(--target-color));
   touch-action: none;
   transform-origin: center;
   will-change: transform;
 }
 
-.target * {
+.enemy-sprite,
+.enemy-muzzle,
+.enemy-muzzle-flash {
+  position: absolute;
+  display: block;
   pointer-events: none;
 }
 
-.target-head,
-.target-body,
-.target-arm,
-.target-leg,
-.target-tag,
-.target-flame {
+.enemy-sprite {
+  top: var(--enemy-top, 32px);
+  left: var(--enemy-left, 16px);
+  width: var(--enemy-frame-width, 128px);
+  height: var(--enemy-frame-height, 128px);
+  overflow: hidden;
+  image-rendering: pixelated;
+  transform: scale(var(--enemy-scale));
+  transform-origin: center bottom;
+}
+
+.enemy-sprite::before {
+  content: "";
   position: absolute;
-  display: block;
-}
-
-.target-flame {
-  display: none;
-  top: 42px;
-  left: -12px;
-  width: 14px;
-  height: 22px;
-  background:
-    linear-gradient(90deg, #fff8e8 0 4px, #ffd348 5px 10px, #ef4f3b 11px 14px);
-  box-shadow: 0 0 14px var(--target-color);
-  animation: enemyFlame 0.16s steps(2) infinite;
-}
-
-.target-head {
-  top: 3px;
-  left: 17px;
-  width: 24px;
-  height: 24px;
-  background: var(--target-color);
-  border: 3px solid #11161f;
-}
-
-.target-body {
-  top: 30px;
-  left: 16px;
-  width: 26px;
-  height: 38px;
-  border: 4px solid var(--target-color);
-  background: #1b2029;
-  animation: enemyPulse 0.5s steps(2) infinite;
-}
-
-.target-arm {
-  top: 38px;
-  width: 13px;
-  height: 31px;
-  background: var(--target-color);
-}
-
-.target-arm-left {
-  left: 4px;
-}
-
-.target-arm-right {
-  right: 4px;
-}
-
-.target-leg {
-  top: 67px;
-  width: 11px;
-  height: 27px;
-  background: var(--target-color);
-}
-
-.target-leg-left {
-  left: 18px;
-  animation: targetWalkLeft 0.42s steps(2) infinite;
-}
-
-.target-leg-right {
-  left: 33px;
-  animation: targetWalkRight 0.42s steps(2) infinite;
-}
-
-.target-tag {
-  top: -12px;
-  right: -12px;
-  padding: 2px 4px;
-  color: #11161f;
-  background: #fff8e8;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.target-magenta {
-  --target-color: #cf4bd8;
-}
-
-.target-cyan {
-  --target-color: #25c7e8;
-}
-
-.target-green {
-  --target-color: #62d34d;
-}
-
-.target-red {
-  --target-color: #ef4f3b;
-}
-
-.target-fly .target-flame,
-.target-drop .target-flame,
-.target-leap .target-flame {
-  display: block;
-}
-
-.target-fly .target-arm-left,
-.target-drop .target-arm-left {
-  top: 32px;
+  top: 0;
   left: 0;
-  height: 16px;
+  width: var(--enemy-strip-width);
+  height: var(--enemy-frame-height, 128px);
+  background-image: var(--enemy-url);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  will-change: transform;
+  backface-visibility: hidden;
+  animation: enemyFrames var(--enemy-duration) steps(var(--enemy-steps)) infinite;
 }
 
-.target-fly .target-arm-right,
-.target-drop .target-arm-right {
-  top: 32px;
-  right: 0;
-  height: 16px;
+.target.is-facing-left .enemy-sprite {
+  transform: scaleX(-1) scale(var(--enemy-scale));
 }
 
-.target-leap .target-tag,
-.target-jump .target-tag {
-  background: #ffd348;
+.enemy-muzzle {
+  top: 106px;
+  left: 144px;
+  width: 4px;
+  height: 4px;
 }
 
-.shot-line {
-  position: absolute;
-  z-index: 14;
-  transform-origin: left center;
-  pointer-events: none;
-  animation: shotFade 0.22s steps(2) forwards;
+.target.is-facing-left .enemy-muzzle {
+  left: 16px;
 }
 
-.shot-line-glow {
-  height: 14px;
-  background: rgba(255, 211, 72, 0.32);
-  box-shadow: 0 0 20px #ffd348, 0 0 42px #ef4f3b;
-}
-
-.shot-line-core {
-  height: 6px;
-  background: #fff8e8;
-  box-shadow: 0 0 10px #fff8e8, 0 0 18px #ffd348;
-}
-
-.shot-line-hot {
-  height: 3px;
-  background: #ef4f3b;
-  box-shadow: 0 0 12px #ef4f3b;
-}
-
-.hit-spark {
-  position: absolute;
-  z-index: 15;
-  width: 46px;
-  height: 46px;
-  border: 4px solid #fff8e8;
+.enemy-muzzle-flash {
+  top: 72px;
+  left: 140px;
+  display: none;
+  width: 32px;
+  height: 20px;
   background:
-    linear-gradient(90deg, transparent 0 18px, #ffd348 19px 27px, transparent 28px 100%),
-    linear-gradient(0deg, transparent 0 18px, #ef4f3b 19px 27px, transparent 28px 100%);
-  pointer-events: none;
-  animation: sparkFade 0.32s steps(3) forwards;
+    linear-gradient(90deg, #eefad1 0 9px, #c8ff55 10px 22px, #34e9ff 23px 32px),
+    linear-gradient(0deg, transparent 0 6px, #eefad1 7px 13px, transparent 14px 20px);
+  opacity: 0;
+  transform-origin: left center;
 }
 
-.hit-ring {
-  position: absolute;
-  z-index: 15;
-  width: 26px;
-  height: 26px;
-  border: 4px solid #ffd348;
-  box-shadow: 0 0 18px #ffd348, 0 0 30px #ef4f3b;
-  pointer-events: none;
-  animation: hitRing 0.36s steps(4) forwards;
+.target.is-facing-left .enemy-muzzle-flash {
+  left: -8px;
+  transform-origin: right center;
 }
 
-.hit-particle {
-  position: absolute;
-  z-index: 16;
-  width: 8px;
-  height: 8px;
-  background: #fff8e8;
-  box-shadow: 0 0 10px #ffd348;
+.target.is-shooting .enemy-muzzle-flash {
+  opacity: 0;
+}
+
+.target.is-defeated {
   pointer-events: none;
-  animation: particleBurst 0.36s steps(4) forwards;
+}
+
+.target[data-animation="idle"] {
+  --enemy-url: url("assets/infantryman/Idle.png");
+  --enemy-frames: 6;
+  --enemy-steps: 5;
+  --enemy-end: -640px;
+  --enemy-strip-width: 768px;
+  --enemy-duration: 0.78s;
+}
+
+.target[data-animation="walk"] {
+  --enemy-url: url("assets/infantryman/Walk.png");
+  --enemy-frames: 6;
+  --enemy-steps: 5;
+  --enemy-end: -640px;
+  --enemy-strip-width: 768px;
+  --enemy-duration: 0.7s;
+}
+
+.target[data-animation="shot1"] {
+  --enemy-url: url("assets/infantryman/Shot_1.png");
+  --enemy-frames: 11;
+  --enemy-steps: 10;
+  --enemy-end: -1280px;
+  --enemy-strip-width: 1408px;
+  --enemy-duration: 0.54s;
+}
+
+.target[data-animation="shot2"] {
+  --enemy-url: url("assets/infantryman/Shot_2.png");
+  --enemy-frames: 5;
+  --enemy-steps: 4;
+  --enemy-end: -512px;
+  --enemy-strip-width: 640px;
+  --enemy-duration: 0.42s;
+}
+
+.target[data-animation="attack1"] {
+  --enemy-url: url("assets/infantryman/Attack_1.png");
+  --enemy-frames: 17;
+  --enemy-steps: 16;
+  --enemy-end: -2048px;
+  --enemy-strip-width: 2176px;
+  --enemy-duration: 0.82s;
+}
+
+.target[data-animation="attack2"] {
+  --enemy-url: url("assets/infantryman/Attack_2.png");
+  --enemy-frames: 4;
+  --enemy-steps: 3;
+  --enemy-end: -384px;
+  --enemy-strip-width: 512px;
+  --enemy-duration: 0.4s;
+}
+
+.target[data-animation="hurt"] {
+  --enemy-url: url("assets/infantryman/Hurt.png");
+  --enemy-frames: 4;
+  --enemy-steps: 3;
+  --enemy-end: -384px;
+  --enemy-strip-width: 512px;
+  --enemy-duration: 0.32s;
+}
+
+.target[data-animation="dead"] {
+  --enemy-url: url("assets/infantryman/Dead.png");
+  --enemy-frames: 5;
+  --enemy-steps: 4;
+  --enemy-end: -512px;
+  --enemy-strip-width: 640px;
+  --enemy-duration: 0.64s;
+}
+
+.target[data-animation="enable"] {
+  --enemy-url: url("assets/infantryman/Enabling.png");
+  --enemy-frames: 6;
+  --enemy-steps: 5;
+  --enemy-end: -640px;
+  --enemy-strip-width: 768px;
+  --enemy-duration: 0.46s;
+}
+
+.target[data-animation="shutdown"] {
+  --enemy-url: url("assets/infantryman/Shutdown.png");
+  --enemy-frames: 6;
+  --enemy-steps: 5;
+  --enemy-end: -640px;
+  --enemy-strip-width: 768px;
+  --enemy-duration: 0.58s;
+}
+
+.target[data-animation="dead"] .enemy-sprite::before,
+.target[data-animation="attack1"] .enemy-sprite::before,
+.target[data-animation="attack2"] .enemy-sprite::before,
+.target[data-animation="attack3"] .enemy-sprite::before,
+.target[data-animation="attack4"] .enemy-sprite::before,
+.target[data-animation="enable"] .enemy-sprite::before,
+.target[data-animation="hurt"] .enemy-sprite::before,
+.target[data-animation="shutdown"] .enemy-sprite::before {
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+.bomb-projectile,
+.shot-effect,
+.shot-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  image-rendering: pixelated;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.shot-beam {
+  z-index: 24;
+  height: 28px;
+  overflow: visible;
+  transform-origin: left center;
+  transform: rotate(var(--angle));
+  animation: beamFade 0.22s steps(3) forwards;
+  --beam-hot: #f5ffff;
+  --beam-main: #42e7ff;
+  --beam-dark: #a746ff;
+}
+
+.shot-beam::before,
+.shot-beam::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  image-rendering: pixelated;
+}
+
+.shot-beam::before {
+  top: 8px;
+  width: 100%;
+  height: 12px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--beam-hot) 0 8px,
+      var(--beam-main) 8px 22px,
+      var(--beam-dark) 22px 30px,
+      transparent 30px 36px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 2px,
+      var(--beam-dark) 2px 4px,
+      var(--beam-hot) 4px 7px,
+      var(--beam-main) 7px 10px,
+      transparent 10px 100%
+    );
+}
+
+.shot-beam::after {
+  top: 2px;
+  width: 100%;
+  height: 24px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 18px, var(--beam-hot) 18px 24px, transparent 24px 42px),
+    linear-gradient(180deg, transparent 0 4px, var(--beam-main) 4px 6px, transparent 6px 16px, var(--beam-dark) 16px 18px, transparent 18px 100%);
+}
+
+.beam-cyan {
+  --beam-hot: #f4ffff;
+  --beam-main: #42e7ff;
+  --beam-dark: #316bff;
+}
+
+.beam-magenta {
+  --beam-hot: #fff1ff;
+  --beam-main: #ff4de1;
+  --beam-dark: #7838ff;
+}
+
+.beam-lime {
+  --beam-hot: #f8ffe9;
+  --beam-main: #73ff7a;
+  --beam-dark: #26bfff;
+}
+
+.beam-amber {
+  --beam-hot: #fffce7;
+  --beam-main: #ffd447;
+  --beam-dark: #ff4f9a;
+}
+
+.bomb-projectile {
+  z-index: 24;
+  width: var(--bomb-frame-width);
+  height: var(--bomb-frame-height);
+}
+
+.shot-effect {
+  z-index: 25;
+  width: var(--effect-frame-width);
+  height: var(--effect-frame-height);
+}
+
+.bomb-projectile::before,
+.shot-effect::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  image-rendering: pixelated;
+  will-change: transform;
+}
+
+.bomb-projectile::before {
+  width: var(--bomb-strip-width);
+  height: var(--bomb-frame-height);
+  background-image: var(--bomb-url);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: ordnanceFrames var(--bomb-duration) steps(var(--bomb-steps)) infinite;
+}
+
+.shot-projectile {
+  transform: translate(-50%, -50%) rotate(var(--angle)) scale(var(--scale));
+}
+
+.shot-effect {
+  transform: translate(-50%, -50%) rotate(var(--angle)) scale(var(--scale));
+}
+
+.shot-effect::before {
+  width: var(--effect-strip-width);
+  height: var(--effect-frame-height);
+  background-image: var(--effect-url);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: ordnanceFrames var(--effect-duration) steps(var(--effect-steps)) forwards;
 }
 
 .player-hit {
   position: absolute;
-  z-index: 16;
+  z-index: 26;
   width: 52px;
   height: 52px;
   border: 5px solid #ef4f3b;
   background:
     linear-gradient(90deg, transparent 0 21px, #fff8e8 22px 30px, transparent 31px 100%),
     linear-gradient(0deg, transparent 0 21px, #ffd348 22px 30px, transparent 31px 100%);
-  box-shadow: 0 0 28px #ef4f3b;
   pointer-events: none;
   animation: playerHitBurst 0.26s steps(3) forwards;
 }
 
 .game-over {
   position: absolute;
-  z-index: 40;
+  z-index: 80;
   inset: 0;
   display: grid;
   place-content: center;
@@ -682,92 +791,11 @@ button {
 
 @keyframes playerRunBob {
   from {
-    transform: translateY(0);
+    transform: scale(var(--player-scale)) translateY(0);
   }
 
   to {
-    transform: translateY(3px);
-  }
-}
-
-@keyframes runLegLeft {
-  from {
-    transform: translateX(-4px);
-  }
-
-  to {
-    transform: translateX(4px);
-  }
-}
-
-@keyframes runLegRight {
-  from {
-    transform: translateX(4px);
-  }
-
-  to {
-    transform: translateX(-4px);
-  }
-}
-
-@keyframes targetWalkLeft {
-  from {
-    transform: translateX(-3px);
-  }
-
-  to {
-    transform: translateX(3px);
-  }
-}
-
-@keyframes targetWalkRight {
-  from {
-    transform: translateX(3px);
-  }
-
-  to {
-    transform: translateX(-3px);
-  }
-}
-
-@keyframes enemyPulse {
-  from {
-    box-shadow: inset 0 0 0 0 var(--target-color);
-  }
-
-  to {
-    box-shadow: inset 0 0 0 5px rgba(255, 248, 232, 0.18);
-  }
-}
-
-@keyframes enemyFlame {
-  from {
-    width: 10px;
-    opacity: 0.8;
-  }
-
-  to {
-    width: 20px;
-    opacity: 1;
-  }
-}
-
-@keyframes screenShake {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-
-  25% {
-    transform: translate(-3px, 2px);
-  }
-
-  50% {
-    transform: translate(3px, -2px);
-  }
-
-  75% {
-    transform: translate(-2px, -1px);
+    transform: scale(var(--player-scale)) translateY(3px);
   }
 }
 
@@ -781,63 +809,51 @@ button {
   }
 }
 
-@keyframes muzzleFlash {
-  0%,
+@keyframes destroyerFrames {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(var(--sprite-end), 0, 0);
+  }
+}
+
+@keyframes enemyFrames {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(var(--enemy-end), 0, 0);
+  }
+}
+
+@keyframes ordnanceFrames {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(var(--bomb-end, var(--effect-end)), 0, 0);
+  }
+}
+
+@keyframes beamFade {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) scaleX(0.92);
+  }
+
+  28%,
+  72% {
+    opacity: 1;
+    transform: rotate(var(--angle)) scaleX(1);
+  }
+
   100% {
     opacity: 0;
-    transform: scaleX(0.45);
-  }
-
-  25%,
-  70% {
-    opacity: 1;
-    transform: scaleX(1.18);
-  }
-}
-
-@keyframes shotFade {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes sparkFade {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(0.65) rotate(0deg);
-  }
-
-  to {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.7) rotate(90deg);
-  }
-}
-
-@keyframes hitRing {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(0.45);
-  }
-
-  to {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(2.6);
-  }
-}
-
-@keyframes particleBurst {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.45);
+    transform: rotate(var(--angle)) scaleX(0.98);
   }
 }
 
@@ -854,42 +870,38 @@ button {
 }
 
 @media (max-height: 620px) {
-  .buildings-layer {
-    bottom: 118px;
-    height: 360px;
-  }
-
-  .ground-layer {
+  .city-layer-5::before {
     height: 124px;
   }
 
-  .sky-layer::after {
-    bottom: 116px;
-  }
-
   .player {
-    bottom: 96px;
+    bottom: 124px;
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 920px) {
+  .hud {
+    top: calc(env(safe-area-inset-top) + clamp(46px, 8.3vh, 70px));
+    right: max(10px, env(safe-area-inset-right));
+    left: 44vw;
+    height: clamp(30px, 5vh, 38px);
+    gap: 6px;
+  }
+
   .stat {
-    min-width: 104px;
-    height: 40px;
-    padding: 0 8px;
+    gap: 4px;
+    padding: 0 4px;
   }
 
   .stat span {
-    font-size: 12px;
+    display: none;
   }
 
   .stat strong {
-    font-size: 20px;
+    font-size: clamp(16px, 2.4vw, 20px);
   }
 
-  .restart-button {
-    min-width: 96px;
-    height: 40px;
-    font-size: 14px;
+  .hud .restart-button {
+    font-size: clamp(9px, 1.6vw, 12px);
   }
 }
