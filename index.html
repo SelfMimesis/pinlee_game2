@@ -8,21 +8,41 @@
   </head>
   <body>
     <main id="game" class="game">
-      <div class="hud">
-        <div class="stat">
-          <span>Puntos</span>
-          <strong id="score">0</strong>
-        </div>
+      <div class="background" aria-hidden="true">
+        <div class="parallax-layer sky-layer"></div>
+        <div class="parallax-layer buildings-layer"></div>
+        <div class="parallax-layer ground-layer"></div>
+      </div>
 
-        <div class="stat">
-          <span>Fallos</span>
-          <strong><span id="misses">0</span>/5</strong>
+      <div id="playArea" class="play-area" aria-label="Zona de juego">
+        <div id="player" class="player" aria-hidden="true">
+          <div class="player-shadow"></div>
+          <div class="player-head"></div>
+          <div class="player-body"></div>
+          <div class="player-arm"></div>
+          <div class="player-gun"></div>
+          <div id="muzzle" class="muzzle"></div>
+          <div class="muzzle-flash"></div>
+          <div class="player-leg player-leg-left"></div>
+          <div class="player-leg player-leg-right"></div>
+        </div>
+      </div>
+
+      <header class="hud">
+        <div class="stats">
+          <div class="stat">
+            <span>Puntos</span>
+            <strong id="score">0</strong>
+          </div>
+
+          <div class="stat">
+            <span>Fallos</span>
+            <strong><span id="misses">0</span>/5</strong>
+          </div>
         </div>
 
         <button id="restartButton" class="restart-button" type="button">Reiniciar</button>
-      </div>
-
-      <div id="playArea" class="play-area" aria-label="Zona de juego"></div>
+      </header>
 
       <section id="gameOver" class="game-over" hidden>
         <h1>Partida terminada</h1>
