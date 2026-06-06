@@ -21,25 +21,31 @@
             <img src="assets/backgrounds/cyberpunk/layer-3-strip.png" alt="" />
           </div>
         </div>
+        <div class="parallax-layer city-layer city-layer-4">
+          <div class="city-track">
+            <img src="assets/backgrounds/cyberpunk/layer-4-strip.png" alt="" />
+            <img src="assets/backgrounds/cyberpunk/layer-4-strip.png" alt="" />
+          </div>
+        </div>
         <div class="parallax-layer city-layer city-layer-5">
           <div class="city-track">
             <img src="assets/backgrounds/cyberpunk/layer-5-strip.png" alt="" />
             <img src="assets/backgrounds/cyberpunk/layer-5-strip.png" alt="" />
           </div>
         </div>
+        <div class="tile-floor"></div>
       </div>
 
       <div id="playArea" class="play-area" aria-label="Zona de juego">
-        <div id="player" class="player" data-animation="idle" aria-hidden="true">
-          <div class="player-sprite"></div>
-          <div id="muzzle" class="muzzle"></div>
-          <div class="muzzle-flash"></div>
+        <div id="player" class="player" data-state="idle" aria-hidden="true">
+          <span class="player-sprite"></span>
+          <span class="player-charge"></span>
         </div>
       </div>
 
       <img
         class="interface-overlay"
-        src="assets/ui/news-interface-presaux.png"
+        src="assets/ui/news-interface-presaux2.png"
         alt=""
         aria-hidden="true"
       />
@@ -52,8 +58,8 @@
           </div>
 
           <div class="stat">
-            <span>Fallos</span>
-            <strong><span id="misses">0</span>/5</strong>
+            <span>Vidas</span>
+            <strong><span id="lives">5</span>/5</strong>
           </div>
         </div>
 

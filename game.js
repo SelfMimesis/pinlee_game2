@@ -1,182 +1,223 @@
-const game = document.querySelector("#game");
 const playArea = document.querySelector("#playArea");
-const player = document.querySelector("#player");
-const muzzle = document.querySelector("#muzzle");
+const playerElement = document.querySelector("#player");
+const playerCharge = playerElement.querySelector(".player-charge");
 const parallaxTracks = Array.from(document.querySelectorAll(".city-track"));
 const scoreText = document.querySelector("#score");
-const missesText = document.querySelector("#misses");
+const livesText = document.querySelector("#lives");
 const finalScoreText = document.querySelector("#finalScore");
 const gameOverPanel = document.querySelector("#gameOver");
 const restartButton = document.querySelector("#restartButton");
 const gameOverRestartButton = document.querySelector("#gameOverRestartButton");
 
-const maxMisses = 5;
+const maxLives = 5;
 const maxTargets = 4;
-const maxEnemyProjectiles = 4;
+const maxEnemyProjectiles = 6;
 const maxDeltaTime = 1 / 30;
+const playerProjectileHitRadius = 46;
+const playerProjectileBlockMultiplier = 3.4;
+const floorHeight = 150;
+const compactFloorHeight = 124;
 const spawnDelay = 1250;
 const baseSpeed = 104;
 const worldSpeed = 104;
-const parallaxLayerSpeeds = [0.1, 0.32, 0.72];
+const enemyProjectileSpeed = 330;
+const parallaxLayerSpeeds = [0.1, 0.32, 0.56, 0.72];
 const parallaxStripRatio = 4608 / 324;
-const targetWidth = 160;
-const targetHeight = 160;
-const playerDangerRadius = 64;
-const playerCloseAttackRadius = 250;
-const playerCloseAttackDelay = 1100;
-const enemyProjectileSpeed = 430;
 
-const playerProfile = createRobotProfile("destroyer", {
-  idle: ["Idle.png", 5, 0.75],
-  walk: ["Walk.png", 8, 0.72],
-  shot1: ["Shot_1.png", 8, 0.46],
-  shot2: ["Shot_2.png", 8, 0.46],
-  attack1: ["Attack_1.png", 4, 0.46],
-  attack2: ["Attack_2.png", 3, 0.43],
-  hurt: ["Hurt.png", 3, 0.34],
-  dead: ["Dead.png", 7, 0.88],
-  enable: ["Enabling.png", 3, 0.45],
-  shutdown: ["Shutdown.png", 5, 0.7],
+const playerProfile = createPlayerProfile("destroyer", {
+  idle: ["Idle.png", 128, 128, 5, 0.75],
+  walk: ["Walk.png", 128, 128, 8, 0.72],
+  shot1: ["Shot_1.png", 128, 128, 8, 0.46],
+  shot2: ["Shot_2.png", 128, 128, 8, 0.46],
+  attack1: ["Attack_1.png", 128, 128, 4, 0.46],
+  attack2: ["Attack_2.png", 128, 128, 3, 0.43],
+  hurt: ["Hurt.png", 128, 128, 3, 0.34],
+  dead: ["Dead.png", 128, 128, 7, 0.88],
+  enable: ["Enabling.png", 128, 128, 3, 0.45],
+  shutdown: ["Shutdown.png", 128, 128, 5, 0.7],
+}, {
+  charge1: ["Charge_1.png", 32, 32, 4, 0.24],
+  charge2: ["Charge_2.png", 64, 64, 5, 0.34],
 });
 
 const enemyProfiles = [
   createEnemyProfile(
-    "infantryman",
-    {
-      idle: ["Idle.png", 6, 0.78],
-      walk: ["Walk.png", 6, 0.7],
-      shot1: ["Shot_1.png", 11, 0.54],
-      shot2: ["Shot_2.png", 5, 0.42],
-      attack1: ["Attack_1.png", 17, 0.82],
-      attack2: ["Attack_2.png", 4, 0.4],
-      hurt: ["Hurt.png", 4, 0.32],
-      dead: ["Dead.png", 5, 0.64],
-      enable: ["Enabling.png", 6, 0.46],
-      shutdown: ["Shutdown.png", 6, 0.58],
-    },
-    { canShoot: true, scale: 1.28, speed: 1.0, closeAttacks: ["attack1", "attack2"] }
-  ),
-  createEnemyProfile(
     "swordsman",
     {
-      idle: ["Idle.png", 5, 0.72],
-      walk: ["Idle.png", 5, 0.72],
-      attack1: ["Attack_1.png", 4, 0.46],
-      attack2: ["Attack_2.png", 2, 0.34],
-      attack3: ["Attack_3.png", 2, 0.34],
-      attack4: ["Attack_4.png", 4, 0.48],
-      pickUp: ["Pick_Up.png", 8, 0.74],
-      hurt: ["Hurt.png", 3, 0.34],
-      dead: ["Dead.png", 4, 0.62],
-      enable: ["Enabling.png", 5, 0.52],
-      shutdown: ["Shutdown.png", 5, 0.58],
+      idle: ["Idle.png", 128, 128, 5, 0.72],
+      walk: ["Idle.png", 128, 128, 5, 0.72],
+      attack1: ["Attack_1.png", 128, 128, 4, 0.46],
+      attack2: ["Attack_2.png", 128, 128, 2, 0.34],
+      attack3: ["Attack_3.png", 128, 128, 2, 0.34],
+      attack4: ["Attack_4.png", 128, 128, 4, 0.48],
+      pickUp: ["Pick_Up.png", 128, 128, 8, 0.74],
+      hurt: ["Hurt.png", 128, 128, 3, 0.34],
+      dead: ["Dead.png", 128, 128, 4, 0.62],
+      enable: ["Enabling.png", 128, 128, 5, 0.52],
+      shutdown: ["Shutdown.png", 128, 128, 5, 0.58],
     },
-    { canShoot: false, scale: 1.34, speed: 1.08, closeAttacks: ["attack1", "attack2", "attack3", "attack4"] }
+    {},
+    {
+      scale: 1.34,
+      speed: 1.08,
+      canShoot: true,
+      jumpiness: 0.85,
+      closeAttacks: ["attack1", "attack2", "attack3", "attack4"],
+      shotAnimations: [],
+      chargeAnimations: [],
+    }
+  ),
+  createEnemyProfile(
+    "infantryman",
+    {
+      idle: ["Idle.png", 128, 128, 6, 0.78],
+      walk: ["Walk.png", 128, 128, 6, 0.58],
+      shot1: ["Shot_1.png", 128, 128, 11, 0.54],
+      shot2: ["Shot_2.png", 128, 128, 5, 0.42],
+      attack1: ["Attack_1.png", 128, 128, 17, 0.82],
+      attack2: ["Attack_2.png", 128, 128, 4, 0.4],
+      hurt: ["Hurt.png", 128, 128, 4, 0.32],
+      dead: ["Dead.png", 128, 128, 5, 0.64],
+      enable: ["Enabling.png", 128, 128, 6, 0.46],
+      shutdown: ["Shutdown.png", 128, 128, 6, 0.58],
+    },
+    {
+      charge1: ["Charge_1.png", 32, 32, 4, 0.24],
+      charge2: ["Charge_2.png", 32, 32, 3, 0.28],
+    },
+    {
+      scale: 1.28,
+      speed: 1.26,
+      canShoot: true,
+      jumpiness: 1.45,
+      closeAttacks: ["attack1", "attack2"],
+      shotAnimations: ["shot1", "shot2"],
+      chargeAnimations: ["charge1", "charge2"],
+    }
   ),
 ];
 
+const droneProfiles = [
+  createDroneProfile("1", 48, 48, 1.85, "Walk.png", "Idle.png", "Death.png", 4, 4, 6),
+  createDroneProfile("2", 96, 96, 1.0, "Drop.png", "Drop.png", "Drop.png", 6, 6, 6),
+  createDroneProfile("3", 48, 48, 1.85, "Forward.png", "Idle.png", "Death.png", 4, 4, 8),
+  createDroneProfile("4", 96, 96, 1.1, "Walk.png", "Idle.png", "Death.png", 4, 4, 6),
+  createDroneProfile("5", 72, 72, 1.35, "Walk.png", "Idle.png", "Death.png", 4, 4, 6),
+  createDroneProfile("5_2", 48, 48, 1.85, "Walk.png", "Idle.png", "Death.png", 4, 4, 6),
+  createDroneProfile("6", 48, 48, 1.85, "Walk.png", "Walk2.png", "Drop.png", 4, 4, 6),
+];
+
+const spawnSequence = ["drone", "swordsman", "infantryman", "drone", "infantryman", "swordsman"];
+
 const bombVariants = [
-  createOrdnanceVariant("assets/ordnance/1 Bombs/1.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/2.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/2_1.png", 16, 16, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/3.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/4.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/4_1.png", 16, 16, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/5.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/5_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/6.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/6_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/7.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/7_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/8.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/8_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/9.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/9_1.png", 16, 16, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/10.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/11.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/11_1.png", 16, 16, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/12.png", 16, 16, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/12_1.png", 16, 16, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/13.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/13_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/14.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/14_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/15.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/15_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/16.png", 24, 24, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/16_1.png", 24, 24, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/17.png", 32, 48, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/17_1.png", 32, 48, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/18.png", 32, 48, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/18_1.png", 32, 48, 4, 0.34),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/19.png", 32, 48, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/20.png", 32, 48, 1, 0.36),
-  createOrdnanceVariant("assets/ordnance/1 Bombs/20_1.png", 32, 48, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/1.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/2.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/2_1.png", 16, 16, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/3.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/4.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/4_1.png", 16, 16, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/5.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/5_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/6.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/6_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/7.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/7_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/8.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/8_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/9.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/9_1.png", 16, 16, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/10.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/11.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/11_1.png", 16, 16, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/12.png", 16, 16, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/12_1.png", 16, 16, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/13.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/13_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/14.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/14_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/15.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/15_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/16.png", 24, 24, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/16_1.png", 24, 24, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/17.png", 32, 48, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/17_1.png", 32, 48, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/18.png", 32, 48, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/18_1.png", 32, 48, 4, 0.34),
+  createSpriteSheet("assets/ordnance/1 Bombs/19.png", 32, 48, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/20.png", 32, 48, 1, 0.36),
+  createSpriteSheet("assets/ordnance/1 Bombs/20_1.png", 32, 48, 4, 0.34),
 ];
 
 const shotEffectVariants = [
-  createOrdnanceVariant("assets/ordnance/3 Effects/1 Tiny/1.png", 32, 32, 8, 0.42),
-  createOrdnanceVariant("assets/ordnance/3 Effects/1 Tiny/2.png", 32, 32, 8, 0.42),
-  createOrdnanceVariant("assets/ordnance/3 Effects/1 Tiny/3.png", 32, 32, 10, 0.48),
-  createOrdnanceVariant("assets/ordnance/3 Effects/2 Low/1.png", 48, 48, 8, 0.44),
-  createOrdnanceVariant("assets/ordnance/3 Effects/2 Low/2.png", 48, 48, 8, 0.44),
-  createOrdnanceVariant("assets/ordnance/3 Effects/2 Low/3.png", 48, 48, 10, 0.5),
-  createOrdnanceVariant("assets/ordnance/3 Effects/3 Middle/1.png", 72, 72, 8, 0.46),
-  createOrdnanceVariant("assets/ordnance/3 Effects/3 Middle/2.png", 72, 72, 8, 0.46),
-  createOrdnanceVariant("assets/ordnance/3 Effects/3 Middle/3.png", 72, 72, 10, 0.52),
-  createOrdnanceVariant("assets/ordnance/3 Effects/4 High/1.png", 96, 96, 8, 0.48),
-  createOrdnanceVariant("assets/ordnance/3 Effects/4 High/2.png", 96, 96, 8, 0.48),
-  createOrdnanceVariant("assets/ordnance/3 Effects/4 High/3.png", 96, 96, 10, 0.54),
+  createSpriteSheet("assets/ordnance/3 Effects/1 Tiny/1.png", 32, 32, 8, 0.42),
+  createSpriteSheet("assets/ordnance/3 Effects/1 Tiny/2.png", 32, 32, 8, 0.42),
+  createSpriteSheet("assets/ordnance/3 Effects/1 Tiny/3.png", 32, 32, 10, 0.48),
+  createSpriteSheet("assets/ordnance/3 Effects/2 Low/1.png", 48, 48, 8, 0.44),
+  createSpriteSheet("assets/ordnance/3 Effects/2 Low/2.png", 48, 48, 8, 0.44),
+  createSpriteSheet("assets/ordnance/3 Effects/2 Low/3.png", 48, 48, 10, 0.5),
+  createSpriteSheet("assets/ordnance/3 Effects/3 Middle/1.png", 72, 72, 8, 0.46),
+  createSpriteSheet("assets/ordnance/3 Effects/3 Middle/2.png", 72, 72, 8, 0.46),
+  createSpriteSheet("assets/ordnance/3 Effects/3 Middle/3.png", 72, 72, 10, 0.52),
+  createSpriteSheet("assets/ordnance/3 Effects/4 High/1.png", 96, 96, 8, 0.48),
+  createSpriteSheet("assets/ordnance/3 Effects/4 High/2.png", 96, 96, 8, 0.48),
+  createSpriteSheet("assets/ordnance/3 Effects/4 High/3.png", 96, 96, 10, 0.54),
 ];
 
 const beamPalettes = ["beam-cyan", "beam-magenta", "beam-lime", "beam-amber"];
 
 let score = 0;
-let misses = 0;
+let lives = maxLives;
 let targets = [];
 let enemyProjectiles = [];
 let bombVariantBag = [];
 let shotEffectVariantBag = [];
 let spawnIndex = 0;
-let shotIndex = 0;
-let playerAttackIndex = 0;
-let parallaxScroll = [0, 0, 0];
+let droneSpawnIndex = 0;
+let parallaxScroll = [];
 let parallaxTileWidth = 0;
-let playerCloseAttackTimer = 0;
-let playerAnimationLocked = false;
-let playerAnimationTimer = 0;
 let lastFrameTime = 0;
 let spawnTimer = 0;
 let animationId = 0;
-let shotEffectTimer = 0;
-let firingResetTimer = 0;
 let gameOverTimer = 0;
 let gameRunning = false;
 
+const playerState = {
+  x: 0,
+  y: 0,
+  width: 128,
+  height: 128,
+  scale: 1.55,
+  targetX: 0,
+  speed: 42,
+  locked: false,
+  dead: false,
+  shotIndex: 0,
+  attackIndex: 0,
+  animationTimer: 0,
+  chargeTimer: 0,
+  invulnerableTimer: 0,
+};
+
 function startGame() {
   score = 0;
-  misses = 0;
+  lives = maxLives;
   spawnIndex = 0;
-  shotIndex = 0;
-  playerAttackIndex = 0;
-  playerCloseAttackTimer = 0;
-  playerAnimationLocked = false;
+  droneSpawnIndex = 0;
   bombVariantBag = [];
   shotEffectVariantBag = [];
 
   clearTimeout(gameOverTimer);
   targets.forEach((target) => removeTarget(target));
   targets = [];
-  enemyProjectiles.forEach((projectile) => projectile.element.remove());
+  enemyProjectiles.forEach((projectile) => removeEnemyProjectile(projectile));
   enemyProjectiles = [];
 
   clearShotEffects();
   resetParallax();
+  resetPlayer();
   updateHud();
   gameOverPanel.hidden = true;
   gameRunning = true;
-  player.classList.add("is-running");
-  playPlayerAnimation("enable", getAnimationDuration(playerProfile.animations.enable, 450));
   createTarget();
   spawnTimer = 0;
   lastFrameTime = performance.now();
@@ -187,45 +228,78 @@ function startGame() {
 
 function updateHud() {
   scoreText.textContent = score;
-  missesText.textContent = misses;
+  livesText.textContent = lives;
   finalScoreText.textContent = score;
 }
 
-function createRobotProfile(folder, animationSpecs) {
-  const animations = {};
-
-  Object.entries(animationSpecs).forEach(([name, spec]) => {
-    animations[name] = createRobotAnimation(`assets/${folder}/${spec[0]}`, spec[1], spec[2]);
-  });
-
+function createPlayerProfile(folder, bodySpecs, chargeSpecs) {
   return {
     folder,
-    animations,
+    body: createAnimationMap(`assets/${folder}`, bodySpecs),
+    charge: createAnimationMap(`assets/${folder}`, chargeSpecs),
   };
 }
 
-function createEnemyProfile(folder, animationSpecs, options) {
+function createEnemyProfile(folder, animationSpecs, chargeSpecs, options) {
   return {
-    ...createRobotProfile(folder, animationSpecs),
     id: folder,
+    kind: "ground",
     width: 160,
     height: 160,
     frameWidth: 128,
     frameHeight: 128,
     spriteLeft: 16,
     spriteTop: 32,
-    canShoot: options.canShoot,
     scale: options.scale,
     speed: options.speed,
+    jumpiness: options.jumpiness,
+    canShoot: options.canShoot,
     closeAttacks: options.closeAttacks,
+    shotAnimations: options.shotAnimations,
+    chargeAnimations: options.chargeAnimations,
+    animations: createAnimationMap(`assets/${folder}`, animationSpecs),
+    charge: createAnimationMap(`assets/${folder}`, chargeSpecs),
   };
 }
 
-function createRobotAnimation(url, frames, duration) {
-  return createOrdnanceVariant(url, 128, 128, frames, duration);
+function createDroneProfile(folder, frameWidth, frameHeight, scale, flyFile, idleFile, deathFile, flyFrames, idleFrames, deathFrames) {
+  const width = Math.ceil(frameWidth * scale) + 34;
+  const height = Math.ceil(frameHeight * scale) + 34;
+
+  return {
+    id: `drone-${folder}`,
+    kind: "drone",
+    width,
+    height,
+    frameWidth,
+    frameHeight,
+    spriteLeft: Math.round((width - frameWidth) / 2),
+    spriteTop: Math.round((height - frameHeight) / 2),
+    scale,
+    speed: 1.08,
+    canShoot: true,
+    closeAttacks: [],
+    animations: {
+      idle: createSpriteSheet(`assets/drones/${folder}/${idleFile}`, frameWidth, frameHeight, idleFrames, 0.68),
+      walk: createSpriteSheet(`assets/drones/${folder}/${flyFile}`, frameWidth, frameHeight, flyFrames, 0.56),
+      hurt: createSpriteSheet(`assets/drones/${folder}/${deathFile}`, frameWidth, frameHeight, deathFrames, 0.48),
+      dead: createSpriteSheet(`assets/drones/${folder}/${deathFile}`, frameWidth, frameHeight, deathFrames, 0.48),
+      enable: createSpriteSheet(`assets/drones/${folder}/${idleFile}`, frameWidth, frameHeight, idleFrames, 0.42),
+    },
+  };
 }
 
-function createOrdnanceVariant(url, frameWidth, frameHeight, frames, duration) {
+function createAnimationMap(basePath, animationSpecs) {
+  const animations = {};
+
+  Object.entries(animationSpecs).forEach(([name, spec]) => {
+    animations[name] = createSpriteSheet(`${basePath}/${spec[0]}`, spec[1], spec[2], spec[3], spec[4]);
+  });
+
+  return animations;
+}
+
+function createSpriteSheet(url, frameWidth, frameHeight, frames, duration) {
   return {
     url,
     frameWidth,
@@ -267,81 +341,170 @@ function applySpriteVariant(element, variant, prefix) {
   element.style.setProperty(`--${prefix}-duration`, `${variant.duration}s`);
 }
 
-function applyCharacterAnimation(element, profile, animationName, prefix) {
+function applyCharacterAnimation(element, profile, animationName) {
   const animation = profile.animations[animationName] || profile.animations.idle;
 
-  applySpriteVariant(element, animation, prefix);
+  applySpriteVariant(element, animation, "enemy");
 }
 
 function getAnimationDuration(animation, fallback) {
   return animation ? Math.ceil(animation.duration * 1000) : fallback;
 }
 
-// Crea un enemigo sprite-sheet con estados de animacion propios.
+function resetPlayer() {
+  clearTimeout(playerState.animationTimer);
+  clearTimeout(playerState.chargeTimer);
+  playerState.x = Math.round(playArea.clientWidth * 0.045);
+  playerState.targetX = Math.round(playArea.clientWidth * 0.145);
+  playerState.y = getPlayerTopForBlueLine();
+  playerState.locked = true;
+  playerState.dead = false;
+  playerState.shotIndex = 0;
+  playerState.attackIndex = 0;
+  playerState.invulnerableTimer = 0;
+  playerElement.classList.remove("is-hit");
+  playerCharge.hidden = true;
+  renderPlayer();
+  playPlayerAnimation("enable", getAnimationDuration(playerProfile.body.enable, 450), () => {
+    playPlayerAnimation("idle", 220, () => setPlayerAnimation("walk"));
+  });
+}
+
+function renderPlayer() {
+  playerState.y = getPlayerTopForBlueLine();
+  playerElement.style.transform =
+    `translate3d(${playerState.x}px, ${playerState.y}px, 0) scale(${playerState.scale})`;
+}
+
+function updatePlayer(deltaTime) {
+  if (playerState.dead) {
+    return;
+  }
+
+  if (playerState.x < playerState.targetX) {
+    playerState.x = Math.min(playerState.targetX, playerState.x + playerState.speed * deltaTime);
+  }
+
+  if (playerState.invulnerableTimer > 0) {
+    playerState.invulnerableTimer = Math.max(0, playerState.invulnerableTimer - deltaTime * 1000);
+  }
+
+  if (!playerState.locked) {
+    setPlayerAnimation("walk");
+  }
+
+  renderPlayer();
+}
+
+function playPlayerAnimation(animationName, duration, onComplete) {
+  playerState.locked = true;
+  setPlayerAnimation(animationName);
+  clearTimeout(playerState.animationTimer);
+
+  playerState.animationTimer = setTimeout(() => {
+    playerState.locked = false;
+    if (onComplete) {
+      onComplete();
+    } else if (gameRunning && !playerState.dead) {
+      setPlayerAnimation("walk");
+    }
+  }, duration);
+}
+
+function setPlayerAnimation(animationName) {
+  if (playerElement.dataset.state === animationName) {
+    return;
+  }
+
+  const animation = playerProfile.body[animationName] || playerProfile.body.idle;
+
+  playerElement.dataset.state = animationName;
+  applySpriteVariant(playerElement, animation, "sprite");
+}
+
+function showPlayerCharge(chargeName, angle) {
+  const animation = playerProfile.charge[chargeName];
+
+  if (!animation) {
+    return;
+  }
+
+  playerCharge.hidden = false;
+  playerCharge.dataset.state = chargeName;
+  playerCharge.style.setProperty("--charge-angle", `${angle}rad`);
+  playerCharge.style.setProperty("--charge-scale", chargeName === "charge2" ? 1.1 : 1.35);
+  applySpriteVariant(playerCharge, animation, "charge");
+  clearTimeout(playerState.chargeTimer);
+  playerState.chargeTimer = setTimeout(() => {
+    playerCharge.hidden = true;
+  }, getAnimationDuration(animation, 260) + 50);
+}
+
 function createTarget() {
-  const currentSpawnIndex = spawnIndex;
-  const profile = enemyProfiles[currentSpawnIndex % enemyProfiles.length];
+  const spawnKind = spawnSequence[spawnIndex % spawnSequence.length];
+  const profile =
+    spawnKind === "drone"
+      ? droneProfiles[droneSpawnIndex++ % droneProfiles.length]
+      : enemyProfiles[spawnIndex % enemyProfiles.length];
   const width = profile.width;
   const height = profile.height;
-  const startPoint = getPatternStart(width, height);
+  const startPoint = profile.kind === "drone" ? getDroneStart(width, height) : getPatternStart(width, height);
+
   spawnIndex += 1;
 
   const element = document.createElement("div");
-  element.className = `target target-ground target-${profile.id}`;
+  element.className = `target target-${profile.kind} target-${profile.id}`;
   element.dataset.animation = "spawn";
   element.style.width = `${width}px`;
   element.style.height = `${height}px`;
-  element.innerHTML = `
-    <span class="enemy-sprite"></span>
-    ${profile.canShoot ? '<span class="enemy-muzzle"></span><span class="enemy-muzzle-flash"></span>' : ""}
-  `;
+  element.innerHTML = '<span class="enemy-sprite"></span><span class="enemy-charge" hidden></span>';
 
   const target = {
     element,
-    sprite: element.querySelector(".enemy-sprite"),
-    muzzle: element.querySelector(".enemy-muzzle"),
-    kind: profile.id,
+    charge: element.querySelector(".enemy-charge"),
+    kind: profile.kind,
     profile,
+    canCloseAttack: profile.kind !== "drone" && profile.closeAttacks.length > 0,
     canShoot: profile.canShoot,
-    canCloseAttack: true,
-    mode: "ground",
     width,
     height,
     x: startPoint.x,
     y: startPoint.y,
     displayY: startPoint.y,
+    goalY: startPoint.goalY || startPoint.y,
     age: 0,
     speed: randomNumber(baseSpeed, baseSpeed + 30) * profile.speed,
-    hopAmount: randomNumber(10, 24),
+    jumpiness: profile.jumpiness || 1,
+    hopAmount: Math.round(randomNumber(10, 24) * (profile.jumpiness || 1)),
     hopTimer: randomNumber(500, 1700),
     hopAge: 0,
     hopDuration: 0,
     phase: randomNumber(0, 628) / 100,
-    shootTimer: randomNumber(900, 1500),
-    shootCooldown: randomNumber(2400, 3600),
     closeAttackTimer: randomNumber(500, 1200),
     closeAttackIndex: 0,
-    shotVariant: 0,
+    shotIndex: 0,
+    shootTimer: randomNumber(900, 1700),
+    shootCooldown: randomNumber(2100, 3400),
     animationLocked: true,
     animationTimer: 0,
+    chargeTimer: 0,
     pendingShotTimer: 0,
     dead: false,
   };
 
-  // Pointer events funcionan con raton, stylus y pantalla tactil.
   element.addEventListener("pointerdown", (event) => {
     event.preventDefault();
+    event.stopPropagation();
     hitTarget(target);
   });
 
   playArea.appendChild(element);
   targets.push(target);
   renderTarget(target);
-
   playEnemyAnimation(target, "enable", getAnimationDuration(target.profile.animations.enable, 430));
 }
 
-function getPatternStart(width = targetWidth, height = targetHeight) {
+function getPatternStart(width, height) {
   const areaWidth = playArea.clientWidth;
   const floorTop = getFloorTop();
   const spawnOffset = randomNumber(0, Math.round(areaWidth * 0.16));
@@ -349,9 +512,22 @@ function getPatternStart(width = targetWidth, height = targetHeight) {
   return { x: areaWidth + spawnOffset, y: floorTop - height };
 }
 
-// Al tocar/clicar un enemigo, el jugador dispara y el enemigo muere con animacion.
+function getDroneStart(width, height) {
+  const areaWidth = playArea.clientWidth;
+  const areaHeight = playArea.clientHeight;
+  const minY = Math.round(areaHeight * 0.16);
+  const maxY = Math.round(areaHeight * 0.48);
+  const y = randomNumber(minY, maxY);
+
+  return {
+    x: areaWidth + randomNumber(0, Math.round(areaWidth * 0.18)),
+    y,
+    goalY: randomNumber(minY, maxY) - height * 0.1,
+  };
+}
+
 function hitTarget(target) {
-  if (!gameRunning || target.dead) {
+  if (!gameRunning || target.dead || playerState.dead) {
     return;
   }
 
@@ -368,7 +544,6 @@ function defeatTarget(target) {
   target.element.classList.add("is-defeated");
   target.element.style.pointerEvents = "none";
   clearTimeout(target.animationTimer);
-  clearTimeout(target.pendingShotTimer);
 
   setEnemyAnimation(target, "hurt");
 
@@ -383,6 +558,7 @@ function defeatTarget(target) {
 
 function removeTarget(target) {
   clearTimeout(target.animationTimer);
+  clearTimeout(target.chargeTimer);
   clearTimeout(target.pendingShotTimer);
   target.element.remove();
   targets = targets.filter((currentTarget) => currentTarget !== target);
@@ -393,8 +569,6 @@ function gameLoop(currentTime) {
     return;
   }
 
-  // Se pinta en cada requestAnimationFrame. Si el navegador se retrasa,
-  // limitamos el delta para que los sprites no den saltos largos.
   const deltaTime = Math.min((currentTime - lastFrameTime) / 1000, maxDeltaTime);
   lastFrameTime = currentTime;
   spawnTimer += deltaTime * 1000;
@@ -405,22 +579,12 @@ function gameLoop(currentTime) {
   }
 
   updateParallax(deltaTime);
-  updatePlayerAnimation(deltaTime);
-  playerCloseAttackTimer = Math.max(0, playerCloseAttackTimer - deltaTime * 1000);
+  updatePlayer(deltaTime);
   moveTargets(deltaTime);
   moveEnemyProjectiles(deltaTime);
   animationId = requestAnimationFrame(gameLoop);
 }
 
-function updatePlayerAnimation(deltaTime) {
-  if (playerAnimationLocked) {
-    return;
-  }
-
-  setPlayerAnimation("walk");
-}
-
-// Mueve todos los enemigos hacia el jugador y gestiona sus disparos.
 function moveTargets(deltaTime) {
   const playerPoint = getPlayerPoint();
   let hasCloseTarget = false;
@@ -439,21 +603,27 @@ function moveTargets(deltaTime) {
 
     renderTarget(target);
 
-    if (!target.dead && isTouchingPlayer(target, playerPoint)) {
-      missTarget(target, playerPoint);
+    if (!target.dead && target.kind === "drone" && hasEscapedLeft(target)) {
+      damagePlayer();
+      removeTarget(target);
+    } else if (!target.dead && target.kind !== "drone" && isTouchingPlayer(target, playerPoint)) {
+      damagePlayer();
+      defeatTarget(target);
     }
   });
 
   updatePlayerCloseAttack(hasCloseTarget);
-
-  if (misses >= maxMisses) {
-    endGame();
-  }
 }
 
 function moveTargetTowardPlayer(target, playerPoint, deltaTime) {
+  if (target.kind === "drone") {
+    target.x -= target.speed * deltaTime;
+    target.y += (target.goalY - target.y) * Math.min(deltaTime * 1.8, 1);
+    return;
+  }
+
   const targetCenterX = target.x + target.width / 2;
-  const goalX = playerPoint.x + 10;
+  const goalX = playerPoint.x + 16;
   const travel = target.speed * deltaTime;
   const direction = targetCenterX > goalX ? -1 : -0.25;
 
@@ -469,7 +639,7 @@ function updateGroundHop(target, deltaTime) {
     if (target.hopAge >= target.hopDuration) {
       target.hopAge = 0;
       target.hopDuration = 0;
-      target.hopTimer = randomNumber(1100, 2600);
+      target.hopTimer = Math.round(randomNumber(900, 2300) / target.jumpiness);
     }
 
     return;
@@ -478,8 +648,8 @@ function updateGroundHop(target, deltaTime) {
   target.hopTimer -= deltaTime * 1000;
 
   if (target.hopTimer <= 0) {
-    target.hopDuration = randomNumber(280, 460);
-    target.hopAmount = randomNumber(10, 24);
+    target.hopDuration = Math.round(randomNumber(260, 430) / Math.min(target.jumpiness, 1.25));
+    target.hopAmount = Math.round(randomNumber(12, 28) * target.jumpiness);
     target.hopAge = 0;
   }
 }
@@ -504,40 +674,62 @@ function updateEnemyCloseAttack(target, playerPoint, deltaTime) {
 }
 
 function updateEnemyShooting(target, playerPoint, deltaTime) {
-  if (!target.canShoot) {
+  if (!target.canShoot || target.dead) {
     return;
   }
 
-  const enemyCenterX = target.x + target.width / 2;
-  const enemyCenterY = target.displayY + target.height / 2;
-  const distanceToPlayer = Math.hypot(enemyCenterX - playerPoint.x, enemyCenterY - playerPoint.y);
+  const targetPoint = getTargetPoint(target);
+  const distanceToPlayer = Math.hypot(targetPoint.x - playerPoint.x, targetPoint.y - playerPoint.y);
 
   target.shootTimer -= deltaTime * 1000;
 
-  if (target.shootTimer > 0 || target.animationLocked || distanceToPlayer < 130 || distanceToPlayer > 1500) {
+  if (target.shootTimer > 0 || target.animationLocked || distanceToPlayer < 170 || distanceToPlayer > 1200) {
     return;
   }
 
   enemyShoot(target, playerPoint);
   target.shootTimer = target.shootCooldown;
-  target.shootCooldown = randomNumber(2400, 3800);
+  target.shootCooldown = randomNumber(2100, 3600);
 }
 
 function enemyShoot(target, playerPoint) {
-  const animationName = target.shotVariant % 2 === 0 ? "shot1" : "shot2";
-  target.shotVariant += 1;
-  target.element.classList.add("is-shooting");
-  playEnemyAnimation(target, animationName, getAnimationDuration(target.profile.animations[animationName], 520));
+  const shotAnimations = target.profile.shotAnimations || [];
+  const chargeAnimations = target.profile.chargeAnimations || [];
+  const shotAnimation = shotAnimations[target.shotIndex % Math.max(shotAnimations.length, 1)];
+  const chargeAnimation = chargeAnimations[target.shotIndex % Math.max(chargeAnimations.length, 1)];
+  const start = getTargetPoint(target);
+  const angle = Math.atan2(playerPoint.y - start.y, playerPoint.x - start.x);
+
+  target.shotIndex += 1;
+  showEnemyCharge(target, chargeAnimation, angle);
+
+  if (shotAnimation) {
+    playEnemyAnimation(target, shotAnimation, getAnimationDuration(target.profile.animations[shotAnimation], 480));
+  }
+
   clearTimeout(target.pendingShotTimer);
-
   target.pendingShotTimer = setTimeout(() => {
-    if (!gameRunning || target.dead || !targets.includes(target)) {
-      return;
+    if (gameRunning && !target.dead && targets.includes(target)) {
+      createEnemyProjectile(target, playerPoint);
     }
+  }, shotAnimation ? 170 : 0);
+}
 
-    createEnemyProjectile(target, playerPoint);
-    target.element.classList.remove("is-shooting");
-  }, 190);
+function showEnemyCharge(target, chargeName, angle) {
+  const animation = target.profile.charge?.[chargeName];
+
+  if (!animation || !target.charge) {
+    return;
+  }
+
+  target.charge.hidden = false;
+  target.charge.style.setProperty("--charge-angle", `${angle}rad`);
+  target.charge.style.setProperty("--charge-scale", chargeName === "charge2" ? 1.05 : 1.2);
+  applySpriteVariant(target.charge, animation, "charge");
+  clearTimeout(target.chargeTimer);
+  target.chargeTimer = setTimeout(() => {
+    target.charge.hidden = true;
+  }, getAnimationDuration(animation, 260) + 50);
 }
 
 function createEnemyProjectile(target, playerPoint) {
@@ -545,27 +737,33 @@ function createEnemyProjectile(target, playerPoint) {
     removeEnemyProjectile(enemyProjectiles[0]);
   }
 
-  const start = getEnemyMuzzlePoint(target);
+  const start = getTargetPoint(target);
   const deltaX = playerPoint.x - start.x;
   const deltaY = playerPoint.y - start.y;
   const angle = Math.atan2(deltaY, deltaX);
-  const projectile = document.createElement("div");
   const variant = pickBombVariant();
-
-  createShotEffect(start.x, start.y, angle, 0.58);
+  const projectile = document.createElement("div");
 
   projectile.className = "bomb-projectile enemy-projectile";
   applySpriteVariant(projectile, variant, "bomb");
+  projectile.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    hitEnemyProjectile(projectileState);
+  });
   playArea.appendChild(projectile);
 
   const projectileState = {
     element: projectile,
     scale: variant.frameHeight > 32 ? 1.0 : 1.45,
+    radius: Math.max(14, variant.frameHeight * 0.7),
     x: start.x,
     y: start.y,
     vx: Math.cos(angle) * enemyProjectileSpeed,
     vy: Math.sin(angle) * enemyProjectileSpeed,
     angle,
+    spinAngle: 0,
+    spinSpeed: getRandomProjectileSpinSpeed(),
     age: 0,
   };
 
@@ -574,16 +772,28 @@ function createEnemyProjectile(target, playerPoint) {
 }
 
 function moveEnemyProjectiles(deltaTime) {
+  const playerPoint = getPlayerPoint();
+
   for (let index = enemyProjectiles.length - 1; index >= 0; index -= 1) {
     const projectile = enemyProjectiles[index];
 
     projectile.age += deltaTime;
     projectile.x += projectile.vx * deltaTime;
     projectile.y += projectile.vy * deltaTime;
+    projectile.spinAngle += projectile.spinSpeed * deltaTime;
     renderEnemyProjectile(projectile);
 
-    if (
-      projectile.age > 2.4 ||
+    const distanceToPlayer = Math.hypot(projectile.x - playerPoint.x, projectile.y - playerPoint.y);
+    const blockRadius = playerProjectileHitRadius * playerProjectileBlockMultiplier;
+
+    if (isPlayerBlockingProjectiles() && distanceToPlayer < projectile.radius + blockRadius) {
+      blockEnemyProjectile(projectile);
+    } else if (distanceToPlayer < projectile.radius + playerProjectileHitRadius) {
+      createShotEffect(projectile.x, projectile.y, projectile.angle, 0.9);
+      removeEnemyProjectile(projectile);
+      damagePlayer();
+    } else if (
+      projectile.age > 3 ||
       projectile.x < -80 ||
       projectile.x > playArea.clientWidth + 80 ||
       projectile.y < -80 ||
@@ -592,21 +802,41 @@ function moveEnemyProjectiles(deltaTime) {
       removeEnemyProjectile(projectile);
     }
   }
+}
 
-  if (misses >= maxMisses) {
-    endGame();
+function hitEnemyProjectile(projectile) {
+  if (!gameRunning || playerState.dead || !enemyProjectiles.includes(projectile)) {
+    return;
   }
+
+  score += 1;
+  showShot(projectile.x, projectile.y);
+  createShotEffect(projectile.x, projectile.y, projectile.angle, 1.0);
+  removeEnemyProjectile(projectile);
+  updateHud();
+}
+
+function blockEnemyProjectile(projectile) {
+  createShotEffect(projectile.x, projectile.y, projectile.angle, 1.1);
+  removeEnemyProjectile(projectile);
+}
+
+function removeEnemyProjectile(projectile) {
+  projectile.element.remove();
+  enemyProjectiles = enemyProjectiles.filter((currentProjectile) => currentProjectile !== projectile);
 }
 
 function renderEnemyProjectile(projectile) {
   projectile.element.style.transform =
-    `translate3d(${projectile.x}px, ${projectile.y}px, 0) translate(-50%, -50%) rotate(${projectile.angle}rad) scale(${projectile.scale})`;
+    `translate3d(${projectile.x}px, ${projectile.y}px, 0) translate(-50%, -50%) rotate(${projectile.angle + projectile.spinAngle}rad) scale(${projectile.scale})`;
 }
 
 function renderTarget(target) {
   let extraY = 0;
 
-  if (target.hopDuration > 0) {
+  if (target.kind === "drone") {
+    extraY = Math.sin(target.age * 5.4 + target.phase) * 10;
+  } else if (target.hopDuration > 0) {
     const progress = Math.min(target.hopAge / target.hopDuration, 1);
     extraY = -Math.sin(progress * Math.PI) * target.hopAmount;
   }
@@ -621,11 +851,9 @@ function updateEnemyFacing(target, playerPoint) {
 }
 
 function updateEnemyAnimation(target) {
-  if (target.animationLocked) {
-    return;
+  if (!target.animationLocked) {
+    setEnemyAnimation(target, "walk");
   }
-
-  setEnemyAnimation(target, "walk");
 }
 
 function playEnemyAnimation(target, animationName, duration) {
@@ -648,77 +876,105 @@ function setEnemyAnimation(target, animationName) {
   }
 
   target.element.dataset.animation = animationName;
-  applyCharacterAnimation(target.element, target.profile, animationName, "enemy");
+  applyCharacterAnimation(target.element, target.profile, animationName);
   target.element.style.setProperty("--enemy-scale", target.profile.scale);
   target.element.style.setProperty("--enemy-left", `${target.profile.spriteLeft}px`);
   target.element.style.setProperty("--enemy-top", `${target.profile.spriteTop}px`);
 }
 
 function isTouchingPlayer(target, playerPoint) {
-  const enemyCenterX = target.x + target.width / 2;
-  const enemyCenterY = target.displayY + target.height / 2;
-  const distanceToPlayer = Math.hypot(enemyCenterX - playerPoint.x, enemyCenterY - playerPoint.y);
+  const targetPoint = getTargetPoint(target);
+  const distanceToPlayer = Math.hypot(targetPoint.x - playerPoint.x, targetPoint.y - playerPoint.y);
 
-  return distanceToPlayer < playerDangerRadius;
+  return distanceToPlayer < 64;
 }
 
 function isCloseToPlayer(target, playerPoint) {
-  const enemyCenterX = target.x + target.width / 2;
-  const enemyCenterY = target.displayY + target.height / 2;
-  const distanceToPlayer = Math.hypot(enemyCenterX - playerPoint.x, enemyCenterY - playerPoint.y);
+  const targetPoint = getTargetPoint(target);
+  const distanceToPlayer = Math.hypot(targetPoint.x - playerPoint.x, targetPoint.y - playerPoint.y);
 
-  return distanceToPlayer < playerCloseAttackRadius;
+  return distanceToPlayer < 230;
 }
 
 function updatePlayerCloseAttack(hasCloseTarget) {
-  const isBusy = playerAnimationLocked || player.classList.contains("is-firing");
-
-  if (!hasCloseTarget || isBusy || playerCloseAttackTimer > 0) {
+  if (!hasCloseTarget) {
     return;
   }
 
-  const animationName = playerAttackIndex % 2 === 0 ? "attack1" : "attack2";
-
-  playerAttackIndex += 1;
-  playerCloseAttackTimer = playerCloseAttackDelay;
-  playPlayerAnimation(animationName, getAnimationDuration(playerProfile.animations[animationName], 460));
+  triggerPlayerShortAttack();
 }
 
-function missTarget(target, playerPoint) {
-  misses += 1;
-  showPlayerHit(playerPoint.x, playerPoint.y);
-  defeatTarget(target);
+function triggerPlayerShortAttack() {
+  if (!gameRunning || playerState.locked || playerState.dead) {
+    return;
+  }
+
+  const animationName = playerState.attackIndex % 2 === 0 ? "attack1" : "attack2";
+
+  playerState.attackIndex += 1;
+  playPlayerAnimation(animationName, getAnimationDuration(playerProfile.body[animationName], 460));
+}
+
+function isPlayerBlockingProjectiles() {
+  const state = playerElement.dataset.state;
+  return state === "attack1" || state === "attack2";
+}
+
+function damagePlayer() {
+  if (playerState.dead || playerState.invulnerableTimer > 0) {
+    return;
+  }
+
+  lives = Math.max(0, lives - 1);
   updateHud();
+
+  if (lives <= 0) {
+    endGame();
+    return;
+  }
+
+  playerState.invulnerableTimer = 950;
+  playerElement.classList.add("is-hit");
+  playPlayerAnimation("hurt", getAnimationDuration(playerProfile.body.hurt, 360), () => {
+    playerElement.classList.remove("is-hit");
+    setPlayerAnimation("walk");
+  });
 }
 
-function removeEnemyProjectile(projectile) {
-  projectile.element.remove();
-  enemyProjectiles = enemyProjectiles.filter((currentProjectile) => currentProjectile !== projectile);
+function hasEscapedLeft(target) {
+  return target.x < -target.width - 20;
 }
 
 function endGame() {
+  if (playerState.dead) {
+    return;
+  }
+
   gameRunning = false;
-  player.classList.remove("is-running");
-  clearTimeout(playerAnimationTimer);
-  playerAnimationLocked = true;
-  setPlayerAnimation("dead");
+  playerState.dead = true;
   cancelAnimationFrame(animationId);
+  clearTimeout(playerState.animationTimer);
+  playPlayerAnimation("shutdown", getAnimationDuration(playerProfile.body.shutdown, 700), () => {
+    playerState.locked = true;
+    setPlayerAnimation("dead");
+  });
   gameOverTimer = setTimeout(() => {
     if (!gameRunning) {
       gameOverPanel.hidden = false;
     }
-  }, 650);
+  }, 1300);
 }
 
-// Las cinco capas se mueven a velocidades diferentes para crear parallax.
 function updateParallax(deltaTime) {
   if (!parallaxTileWidth) {
     updateParallaxMetrics();
   }
 
   for (let index = 0; index < parallaxTracks.length; index += 1) {
+    const speed = parallaxLayerSpeeds[index] || parallaxLayerSpeeds[parallaxLayerSpeeds.length - 1];
+
     parallaxScroll[index] =
-      (parallaxScroll[index] - worldSpeed * parallaxLayerSpeeds[index] * deltaTime) % parallaxTileWidth;
+      (parallaxScroll[index] - worldSpeed * speed * deltaTime) % parallaxTileWidth;
     parallaxTracks[index].style.transform = `translate3d(${parallaxScroll[index]}px, 0, 0)`;
   }
 }
@@ -732,37 +988,27 @@ function updateParallaxMetrics() {
 }
 
 function resetParallax() {
-  parallaxScroll = [0, 0, 0];
+  parallaxScroll = parallaxTracks.map(() => 0);
   updateParallaxMetrics();
   updateParallax(0);
 }
 
-// Dibuja un disparo mas dramatico desde el arma hasta el enemigo tocado.
 function showShot(endX, endY) {
-  const shotAnimation = shotIndex % 2 === 0 ? "shot1" : "shot2";
+  const start = getMuzzlePoint();
+  const deltaX = endX - start.x;
+  const deltaY = endY - start.y;
+  const length = Math.hypot(deltaX, deltaY);
+  const angle = Math.atan2(deltaY, deltaX);
+  const shotAnimation = playerState.shotIndex % 2 === 0 ? "shot1" : "shot2";
+  const chargeAnimation = playerState.shotIndex % 2 === 0 ? "charge1" : "charge2";
 
-  shotIndex += 1;
-  playPlayerAnimation(shotAnimation, getAnimationDuration(playerProfile.animations[shotAnimation], 470));
-  player.classList.add("is-firing");
-  clearTimeout(shotEffectTimer);
-  clearTimeout(firingResetTimer);
-
-  shotEffectTimer = setTimeout(() => {
-    const start = getMuzzlePoint();
-    const deltaX = endX - start.x;
-    const deltaY = endY - start.y;
-    const length = Math.hypot(deltaX, deltaY);
-    const angle = Math.atan2(deltaY, deltaX);
-
-    createCyberBeam(start, length, angle);
-    createShotEffect(start.x, start.y, angle, 0.72);
-    createProjectileTrail(start, length, angle);
-    createShotEffect(endX, endY, angle, 1.05);
-  }, 180);
-
-  firingResetTimer = setTimeout(() => {
-    player.classList.remove("is-firing");
-  }, 360);
+  playerState.shotIndex += 1;
+  showPlayerCharge(chargeAnimation, angle);
+  playPlayerAnimation(shotAnimation, getAnimationDuration(playerProfile.body[shotAnimation], 470));
+  createCyberBeam(start, length, angle);
+  createShotEffect(start.x, start.y, angle, 0.72);
+  createProjectileTrail(start, length, angle);
+  createShotEffect(endX, endY, angle, 1.05);
 }
 
 function createCyberBeam(start, length, angle) {
@@ -770,13 +1016,14 @@ function createCyberBeam(start, length, angle) {
   const palette = beamPalettes[randomNumber(0, beamPalettes.length - 1)];
 
   beam.className = `shot-beam ${palette}`;
+  beam.innerHTML = '<span class="beam-pulse"></span><span class="beam-head"></span>';
   beam.style.left = `${start.x}px`;
   beam.style.top = `${start.y}px`;
   beam.style.width = `${length}px`;
   beam.style.setProperty("--angle", `${angle}rad`);
   playArea.appendChild(beam);
 
-  setTimeout(() => beam.remove(), 260);
+  setTimeout(() => beam.remove(), 560);
 }
 
 function createProjectileTrail(start, length, angle) {
@@ -801,6 +1048,8 @@ function createProjectileTrail(start, length, angle) {
     sprite.style.top = `${y}px`;
     sprite.style.setProperty("--angle", `${angle}rad`);
     sprite.style.setProperty("--scale", `${scale * (1.08 - progress * 0.28)}`);
+    sprite.style.setProperty("--spin-duration", `${randomNumber(180, 620)}ms`);
+    sprite.style.setProperty("--spin-turn", randomNumber(0, 1) === 0 ? "1turn" : "-1turn");
     playArea.appendChild(sprite);
     setTimeout(() => sprite.remove(), 360 + index * 18);
   }
@@ -815,94 +1064,44 @@ function createShotEffect(x, y, angle, scale) {
   effect.style.left = `${x}px`;
   effect.style.top = `${y}px`;
   effect.style.setProperty("--angle", `${angle}rad`);
-  effect.style.setProperty("--scale", scale * 2);
+  effect.style.setProperty("--scale", scale * 4);
   playArea.appendChild(effect);
 
   setTimeout(() => effect.remove(), Math.ceil(variant.duration * 1000) + 80);
 }
 
-function showPlayerHit(x, y) {
-  const spark = document.createElement("div");
-  spark.className = "player-hit";
-  spark.style.left = `${x}px`;
-  spark.style.top = `${y}px`;
-  playArea.appendChild(spark);
-
-  player.classList.remove("is-hit");
-  player.classList.add("is-hit");
-  playPlayerAnimation("hurt", getAnimationDuration(playerProfile.animations.hurt, 360));
-
-  setTimeout(() => {
-    spark.remove();
-    player.classList.remove("is-hit");
-  }, 260);
-}
-
 function clearShotEffects() {
-  clearTimeout(playerAnimationTimer);
-  clearTimeout(shotEffectTimer);
-  clearTimeout(firingResetTimer);
-  playerCloseAttackTimer = 0;
+  clearTimeout(playerState.chargeTimer);
   document
-    .querySelectorAll(
-      ".bomb-projectile, .shot-effect, .shot-beam, .player-hit, .enemy-projectile"
-    )
+    .querySelectorAll(".bomb-projectile, .shot-effect, .shot-beam")
     .forEach((effect) => effect.remove());
-  player.classList.remove("is-firing", "is-hit");
-  playerAnimationLocked = false;
-  setPlayerAnimation("idle");
+  playerCharge.hidden = true;
 }
 
-function playPlayerAnimation(animationName, duration) {
-  playerAnimationLocked = true;
-  setPlayerAnimation(animationName);
-  clearTimeout(playerAnimationTimer);
+function getRandomProjectileSpinSpeed() {
+  const direction = randomNumber(0, 1) === 0 ? -1 : 1;
 
-  playerAnimationTimer = setTimeout(() => {
-    playerAnimationLocked = false;
-
-    if (gameRunning) {
-      updatePlayerAnimation(0);
-    }
-  }, duration);
-}
-
-function setPlayerAnimation(animationName) {
-  if (player.dataset.animation === animationName) {
-    return;
-  }
-
-  player.dataset.animation = animationName;
-  applyCharacterAnimation(player, playerProfile, animationName, "sprite");
+  return direction * randomNumber(5, 14);
 }
 
 function getMuzzlePoint() {
-  const areaRect = playArea.getBoundingClientRect();
-  const muzzleRect = muzzle.getBoundingClientRect();
-
   return {
-    x: muzzleRect.left + muzzleRect.width / 2 - areaRect.left,
-    y: muzzleRect.top + muzzleRect.height / 2 - areaRect.top,
-  };
-}
-
-function getEnemyMuzzlePoint(target) {
-  const areaRect = playArea.getBoundingClientRect();
-  const muzzleRect = target.muzzle.getBoundingClientRect();
-
-  return {
-    x: muzzleRect.left + muzzleRect.width / 2 - areaRect.left,
-    y: muzzleRect.top + muzzleRect.height / 2 - areaRect.top,
+    x: playerState.x + 111 * playerState.scale,
+    y: playerState.y + 58 * playerState.scale,
   };
 }
 
 function getPlayerPoint() {
-  const areaRect = playArea.getBoundingClientRect();
-  const playerRect = player.getBoundingClientRect();
-
   return {
-    x: playerRect.left + playerRect.width * 0.58 - areaRect.left,
-    y: playerRect.top + playerRect.height * 0.52 - areaRect.top,
+    x: playerState.x + 72 * playerState.scale,
+    y: playerState.y + 72 * playerState.scale,
+  };
+}
+
+function getTargetPoint(target) {
+  return {
+    x: target.x + target.width / 2,
+    y: target.displayY + target.height / 2,
   };
 }
 
@@ -918,7 +1117,11 @@ function getTargetCenter(element) {
 
 function getFloorTop() {
   const compactHeight = playArea.clientHeight <= 620;
-  return playArea.clientHeight - (compactHeight ? 124 : 150);
+  return playArea.clientHeight - (compactHeight ? compactFloorHeight : floorHeight);
+}
+
+function getPlayerTopForBlueLine() {
+  return getFloorTop() - playerState.height * playerState.scale - 2;
 }
 
 function randomNumber(min, max) {
@@ -927,7 +1130,18 @@ function randomNumber(min, max) {
 
 restartButton.addEventListener("click", startGame);
 gameOverRestartButton.addEventListener("click", startGame);
-window.addEventListener("resize", updateParallaxMetrics, { passive: true });
+playArea.addEventListener("pointerdown", (event) => {
+  if (event.target !== playArea) {
+    return;
+  }
+
+  event.preventDefault();
+  triggerPlayerShortAttack();
+});
+window.addEventListener("resize", () => {
+  updateParallaxMetrics();
+  renderPlayer();
+}, { passive: true });
 document.querySelectorAll(".city-track img").forEach((image) => {
   image.addEventListener("load", updateParallaxMetrics, { once: true });
 });

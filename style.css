@@ -35,6 +35,8 @@ button {
 
 /* Escena a pantalla completa, pensada para tablet en horizontal: 1340 x 800 aprox. */
 .game {
+  --floor-height: 150px;
+  --floor-strip-width: 960px;
   position: relative;
   width: 100vw;
   height: 100dvh;
@@ -58,6 +60,36 @@ button {
 .background {
   z-index: 1;
   background: #05030d;
+}
+
+.background::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 17;
+  height: var(--floor-height);
+  background: #000;
+  pointer-events: none;
+}
+
+.background::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--floor-height) - 71px);
+  left: 0;
+  z-index: 19;
+  height: 324px;
+  background-image: url("assets/backgrounds/cyberpunk/layer-4-strip.png");
+  background-repeat: repeat-x;
+  background-position: 0 0;
+  background-size: 4608px 324px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: surfaceLineScroll 79s linear infinite;
+  will-change: background-position;
 }
 
 .city-layer {
@@ -97,26 +129,32 @@ button {
   opacity: 0.86;
 }
 
+.city-layer-4 {
+  z-index: 8;
+  opacity: 0;
+}
+
 .city-layer-5 {
   z-index: 5;
   opacity: 1;
 }
 
-.city-layer-5::before {
-  content: "";
+.tile-floor {
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 2;
-  height: 150px;
-  background:
-    linear-gradient(180deg, #182235 0 3px, #0d111b 4px 28px, #15101a 29px 100%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 46px, transparent 47px 118px);
+  z-index: 18;
+  height: var(--floor-height);
+  background-image: url("assets/tiles/power-station/floor-strip.png");
   background-repeat: repeat-x;
-  background-size: 100% 100%, 236px 100%;
-  border-top: 2px solid #24344e;
+  background-position: 0 0;
+  background-size: var(--floor-strip-width) var(--floor-height);
+  image-rendering: pixelated;
+  opacity: 0.1;
   pointer-events: none;
+  animation: tileFloorScroll 9.2s linear infinite;
+  will-change: background-position;
 }
 
 .play-area {
@@ -229,27 +267,21 @@ button {
 
 .player {
   position: absolute;
-  left: 6.5%;
-  bottom: 150px;
-  z-index: 20;
-  width: var(--sprite-frame-width);
-  height: var(--sprite-frame-height);
+  left: 0;
+  top: 0;
+  z-index: 23;
+  width: var(--sprite-frame-width, 128px);
+  height: var(--sprite-frame-height, 128px);
   --sprite-url: url("assets/destroyer/Idle.png");
   --sprite-frame-width: 128px;
   --sprite-frame-height: 128px;
-  --sprite-frames: 5;
   --sprite-steps: 4;
   --sprite-end: -512px;
   --sprite-strip-width: 640px;
   --sprite-duration: 0.75s;
-  --player-scale: 1.55;
-  transform: scale(var(--player-scale));
-  transform-origin: left bottom;
+  transform-origin: left top;
   pointer-events: none;
-}
-
-.player.is-running {
-  animation: playerRunBob 0.42s ease-in-out infinite alternate;
+  will-change: transform;
 }
 
 .player-sprite {
@@ -272,137 +304,52 @@ button {
   image-rendering: pixelated;
   will-change: transform;
   backface-visibility: hidden;
-  animation: destroyerFrames var(--sprite-duration) steps(var(--sprite-steps)) infinite;
+  animation: playerFrames var(--sprite-duration) steps(var(--sprite-steps)) infinite;
 }
 
-.player[data-animation="idle"] {
-  --sprite-url: url("assets/destroyer/Idle.png");
-  --sprite-frames: 5;
-  --sprite-steps: 4;
-  --sprite-end: -512px;
-  --sprite-strip-width: 640px;
-  --sprite-duration: 0.75s;
-}
-
-.player[data-animation="walk"] {
-  --sprite-url: url("assets/destroyer/Walk.png");
-  --sprite-frames: 8;
-  --sprite-steps: 7;
-  --sprite-end: -896px;
-  --sprite-strip-width: 1024px;
-  --sprite-duration: 0.72s;
-}
-
-.player[data-animation="shot1"] {
-  --sprite-url: url("assets/destroyer/Shot_1.png");
-  --sprite-frames: 8;
-  --sprite-steps: 7;
-  --sprite-end: -896px;
-  --sprite-strip-width: 1024px;
-  --sprite-duration: 0.46s;
-}
-
-.player[data-animation="shot2"] {
-  --sprite-url: url("assets/destroyer/Shot_2.png");
-  --sprite-frames: 8;
-  --sprite-steps: 7;
-  --sprite-end: -896px;
-  --sprite-strip-width: 1024px;
-  --sprite-duration: 0.46s;
-}
-
-.player[data-animation="attack1"] {
-  --sprite-url: url("assets/destroyer/Attack_1.png");
-  --sprite-frames: 4;
-  --sprite-steps: 3;
-  --sprite-end: -384px;
-  --sprite-strip-width: 512px;
-  --sprite-duration: 0.46s;
-}
-
-.player[data-animation="attack2"] {
-  --sprite-url: url("assets/destroyer/Attack_2.png");
-  --sprite-frames: 3;
-  --sprite-steps: 2;
-  --sprite-end: -256px;
-  --sprite-strip-width: 384px;
-  --sprite-duration: 0.43s;
-}
-
-.player[data-animation="hurt"] {
-  --sprite-url: url("assets/destroyer/Hurt.png");
-  --sprite-frames: 3;
-  --sprite-steps: 2;
-  --sprite-end: -256px;
-  --sprite-strip-width: 384px;
-  --sprite-duration: 0.34s;
-}
-
-.player[data-animation="dead"] {
-  --sprite-url: url("assets/destroyer/Dead.png");
-  --sprite-frames: 7;
-  --sprite-steps: 6;
-  --sprite-end: -768px;
-  --sprite-strip-width: 896px;
-  --sprite-duration: 0.88s;
-}
-
-.player[data-animation="enable"] {
-  --sprite-url: url("assets/destroyer/Enabling.png");
-  --sprite-frames: 3;
-  --sprite-steps: 2;
-  --sprite-end: -256px;
-  --sprite-strip-width: 384px;
-  --sprite-duration: 0.45s;
-}
-
-.player[data-animation="shutdown"] {
-  --sprite-url: url("assets/destroyer/Shutdown.png");
-  --sprite-frames: 5;
-  --sprite-steps: 4;
-  --sprite-end: -512px;
-  --sprite-strip-width: 640px;
-  --sprite-duration: 0.7s;
-}
-
-.player[data-animation="dead"] .player-sprite::before,
-.player[data-animation="attack1"] .player-sprite::before,
-.player[data-animation="attack2"] .player-sprite::before,
-.player[data-animation="enable"] .player-sprite::before,
-.player[data-animation="hurt"] .player-sprite::before,
-.player[data-animation="shutdown"] .player-sprite::before {
+.player[data-state="dead"] .player-sprite::before,
+.player[data-state="enable"] .player-sprite::before,
+.player[data-state="hurt"] .player-sprite::before,
+.player[data-state="shutdown"] .player-sprite::before,
+.player[data-state^="attack"] .player-sprite::before,
+.player[data-state^="shot"] .player-sprite::before {
   animation-iteration-count: 1;
   animation-fill-mode: forwards;
 }
 
-.muzzle {
+.player-charge {
   position: absolute;
-  top: 58px;
-  left: 113px;
-  width: 4px;
-  height: 4px;
+  left: 100px;
+  top: 43px;
+  z-index: 2;
+  width: var(--charge-frame-width, 32px);
+  height: var(--charge-frame-height, 32px);
+  overflow: hidden;
+  image-rendering: pixelated;
+  transform: translate(-50%, -50%) rotate(var(--charge-angle, 0rad)) scale(var(--charge-scale, 1));
+  transform-origin: center;
 }
 
-.muzzle-flash {
-  position: absolute;
+.player-charge[hidden] {
   display: none;
-  top: 46px;
-  left: 112px;
-  width: 42px;
-  height: 24px;
-  background:
-    linear-gradient(90deg, #fff8e8 0 12px, #ffd348 13px 28px, #ef4f3b 29px 42px),
-    linear-gradient(0deg, transparent 0 7px, #fff8e8 8px 16px, transparent 17px 24px);
-  opacity: 0;
-  transform-origin: left center;
 }
 
-.player.is-firing .muzzle-flash {
-  animation: none;
+.player-charge::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--charge-strip-width, 128px);
+  height: var(--charge-frame-height, 32px);
+  background-image: var(--charge-url);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  animation: playerChargeFrames var(--charge-duration) steps(var(--charge-steps)) forwards;
 }
 
 .player.is-hit {
-  animation: playerHitFlash 0.26s steps(2);
+  animation: playerHitFlash 0.18s steps(2) 5;
 }
 
 .target {
@@ -411,7 +358,7 @@ button {
   top: 0;
   width: 160px;
   height: 160px;
-  --enemy-url: url("assets/infantryman/Idle.png");
+  --enemy-url: url("assets/swordsman/Idle.png");
   --enemy-frame-width: 128px;
   --enemy-frame-height: 128px;
   --enemy-left: 16px;
@@ -429,12 +376,42 @@ button {
   will-change: transform;
 }
 
-.enemy-sprite,
-.enemy-muzzle,
-.enemy-muzzle-flash {
+.enemy-sprite {
   position: absolute;
   display: block;
   pointer-events: none;
+}
+
+.enemy-charge {
+  position: absolute;
+  left: 82px;
+  top: 72px;
+  z-index: 2;
+  width: var(--charge-frame-width, 32px);
+  height: var(--charge-frame-height, 32px);
+  overflow: hidden;
+  image-rendering: pixelated;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(var(--charge-angle, 0rad)) scale(var(--charge-scale, 1));
+  transform-origin: center;
+}
+
+.enemy-charge[hidden] {
+  display: none;
+}
+
+.enemy-charge::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--charge-strip-width, 128px);
+  height: var(--charge-frame-height, 32px);
+  background-image: var(--charge-url);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  animation: playerChargeFrames var(--charge-duration) steps(var(--charge-steps)) forwards;
 }
 
 .enemy-sprite {
@@ -468,138 +445,13 @@ button {
   transform: scaleX(-1) scale(var(--enemy-scale));
 }
 
-.enemy-muzzle {
-  top: 106px;
-  left: 144px;
-  width: 4px;
-  height: 4px;
-}
-
-.target.is-facing-left .enemy-muzzle {
-  left: 16px;
-}
-
-.enemy-muzzle-flash {
-  top: 72px;
-  left: 140px;
-  display: none;
-  width: 32px;
-  height: 20px;
-  background:
-    linear-gradient(90deg, #eefad1 0 9px, #c8ff55 10px 22px, #34e9ff 23px 32px),
-    linear-gradient(0deg, transparent 0 6px, #eefad1 7px 13px, transparent 14px 20px);
-  opacity: 0;
-  transform-origin: left center;
-}
-
-.target.is-facing-left .enemy-muzzle-flash {
-  left: -8px;
-  transform-origin: right center;
-}
-
-.target.is-shooting .enemy-muzzle-flash {
-  opacity: 0;
-}
-
 .target.is-defeated {
   pointer-events: none;
 }
 
-.target[data-animation="idle"] {
-  --enemy-url: url("assets/infantryman/Idle.png");
-  --enemy-frames: 6;
-  --enemy-steps: 5;
-  --enemy-end: -640px;
-  --enemy-strip-width: 768px;
-  --enemy-duration: 0.78s;
-}
-
-.target[data-animation="walk"] {
-  --enemy-url: url("assets/infantryman/Walk.png");
-  --enemy-frames: 6;
-  --enemy-steps: 5;
-  --enemy-end: -640px;
-  --enemy-strip-width: 768px;
-  --enemy-duration: 0.7s;
-}
-
-.target[data-animation="shot1"] {
-  --enemy-url: url("assets/infantryman/Shot_1.png");
-  --enemy-frames: 11;
-  --enemy-steps: 10;
-  --enemy-end: -1280px;
-  --enemy-strip-width: 1408px;
-  --enemy-duration: 0.54s;
-}
-
-.target[data-animation="shot2"] {
-  --enemy-url: url("assets/infantryman/Shot_2.png");
-  --enemy-frames: 5;
-  --enemy-steps: 4;
-  --enemy-end: -512px;
-  --enemy-strip-width: 640px;
-  --enemy-duration: 0.42s;
-}
-
-.target[data-animation="attack1"] {
-  --enemy-url: url("assets/infantryman/Attack_1.png");
-  --enemy-frames: 17;
-  --enemy-steps: 16;
-  --enemy-end: -2048px;
-  --enemy-strip-width: 2176px;
-  --enemy-duration: 0.82s;
-}
-
-.target[data-animation="attack2"] {
-  --enemy-url: url("assets/infantryman/Attack_2.png");
-  --enemy-frames: 4;
-  --enemy-steps: 3;
-  --enemy-end: -384px;
-  --enemy-strip-width: 512px;
-  --enemy-duration: 0.4s;
-}
-
-.target[data-animation="hurt"] {
-  --enemy-url: url("assets/infantryman/Hurt.png");
-  --enemy-frames: 4;
-  --enemy-steps: 3;
-  --enemy-end: -384px;
-  --enemy-strip-width: 512px;
-  --enemy-duration: 0.32s;
-}
-
-.target[data-animation="dead"] {
-  --enemy-url: url("assets/infantryman/Dead.png");
-  --enemy-frames: 5;
-  --enemy-steps: 4;
-  --enemy-end: -512px;
-  --enemy-strip-width: 640px;
-  --enemy-duration: 0.64s;
-}
-
-.target[data-animation="enable"] {
-  --enemy-url: url("assets/infantryman/Enabling.png");
-  --enemy-frames: 6;
-  --enemy-steps: 5;
-  --enemy-end: -640px;
-  --enemy-strip-width: 768px;
-  --enemy-duration: 0.46s;
-}
-
-.target[data-animation="shutdown"] {
-  --enemy-url: url("assets/infantryman/Shutdown.png");
-  --enemy-frames: 6;
-  --enemy-steps: 5;
-  --enemy-end: -640px;
-  --enemy-strip-width: 768px;
-  --enemy-duration: 0.58s;
-}
-
 .target[data-animation="dead"] .enemy-sprite::before,
-.target[data-animation="attack1"] .enemy-sprite::before,
-.target[data-animation="attack2"] .enemy-sprite::before,
-.target[data-animation="attack3"] .enemy-sprite::before,
-.target[data-animation="attack4"] .enemy-sprite::before,
+.target[data-animation^="attack"] .enemy-sprite::before,
+.target[data-animation^="shot"] .enemy-sprite::before,
 .target[data-animation="enable"] .enemy-sprite::before,
 .target[data-animation="hurt"] .enemy-sprite::before,
 .target[data-animation="shutdown"] .enemy-sprite::before {
@@ -621,77 +473,110 @@ button {
 
 .shot-beam {
   z-index: 24;
-  height: 28px;
+  height: 26px;
   overflow: visible;
   transform-origin: left center;
-  transform: rotate(var(--angle));
-  animation: beamFade 0.22s steps(3) forwards;
+  transform: rotate(var(--angle)) scaleX(0);
+  animation: beamShoot 0.46s ease-in-out forwards;
   --beam-hot: #f5ffff;
   --beam-main: #42e7ff;
   --beam-dark: #a746ff;
+  --beam-spark: #ffe85a;
 }
 
 .shot-beam::before,
-.shot-beam::after {
+.shot-beam::after,
+.beam-pulse,
+.beam-head {
   content: "";
   position: absolute;
   left: 0;
   image-rendering: pixelated;
+  pointer-events: none;
 }
 
 .shot-beam::before {
-  top: 8px;
+  top: 10px;
   width: 100%;
-  height: 12px;
+  height: 7px;
   background:
     repeating-linear-gradient(
       90deg,
-      var(--beam-hot) 0 8px,
-      var(--beam-main) 8px 22px,
-      var(--beam-dark) 22px 30px,
-      transparent 30px 36px
+      var(--beam-hot) 0 7px,
+      var(--beam-main) 7px 20px,
+      var(--beam-spark) 20px 24px,
+      var(--beam-dark) 24px 31px,
+      transparent 31px 38px
     ),
     linear-gradient(
       180deg,
-      transparent 0 2px,
-      var(--beam-dark) 2px 4px,
-      var(--beam-hot) 4px 7px,
-      var(--beam-main) 7px 10px,
-      transparent 10px 100%
+      transparent 0 1px,
+      var(--beam-hot) 1px 4px,
+      var(--beam-main) 4px 7px,
+      transparent 7px 100%
     );
+  animation: beamCoreFlicker 0.46s steps(5) forwards;
 }
 
 .shot-beam::after {
-  top: 2px;
+  top: 0;
   width: 100%;
-  height: 24px;
+  height: 26px;
   background:
-    repeating-linear-gradient(90deg, transparent 0 18px, var(--beam-hot) 18px 24px, transparent 24px 42px),
-    linear-gradient(180deg, transparent 0 4px, var(--beam-main) 4px 6px, transparent 6px 16px, var(--beam-dark) 16px 18px, transparent 18px 100%);
+    repeating-linear-gradient(90deg, transparent 0 12px, var(--beam-hot) 12px 16px, transparent 16px 24px, var(--beam-spark) 24px 27px, transparent 27px 42px),
+    linear-gradient(180deg, transparent 0 2px, var(--beam-dark) 2px 4px, transparent 4px 7px, var(--beam-main) 7px 9px, transparent 9px 17px, var(--beam-hot) 17px 19px, transparent 19px 100%);
+  animation: beamSparkChase 0.46s steps(6) forwards;
+}
+
+.beam-pulse {
+  top: 4px;
+  width: 34%;
+  height: 18px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 6px, var(--beam-hot) 6px 11px, transparent 11px 16px),
+    linear-gradient(180deg, transparent 0 3px, var(--beam-spark) 3px 6px, var(--beam-main) 6px 12px, var(--beam-dark) 12px 15px, transparent 15px 100%);
+  animation: beamPulse 0.46s ease-in-out forwards;
+}
+
+.beam-head {
+  top: 3px;
+  right: -18px;
+  left: auto;
+  width: 46px;
+  height: 20px;
+  background:
+    linear-gradient(90deg, var(--beam-hot) 0 8px, var(--beam-spark) 8px 15px, var(--beam-main) 15px 31px, transparent 31px 100%),
+    linear-gradient(180deg, transparent 0 4px, var(--beam-hot) 4px 8px, var(--beam-dark) 8px 14px, transparent 14px 100%);
+  clip-path: polygon(0 24%, 70% 24%, 100% 50%, 70% 76%, 0 76%);
+  animation: beamHead 0.46s ease-in-out forwards;
 }
 
 .beam-cyan {
   --beam-hot: #f4ffff;
   --beam-main: #42e7ff;
   --beam-dark: #316bff;
+  --beam-spark: #fff35c;
 }
 
 .beam-magenta {
   --beam-hot: #fff1ff;
   --beam-main: #ff4de1;
   --beam-dark: #7838ff;
+  --beam-spark: #66f8ff;
 }
 
 .beam-lime {
   --beam-hot: #f8ffe9;
   --beam-main: #73ff7a;
   --beam-dark: #26bfff;
+  --beam-spark: #f4ff38;
 }
 
 .beam-amber {
   --beam-hot: #fffce7;
   --beam-main: #ffd447;
   --beam-dark: #ff4f9a;
+  --beam-spark: #43f6ff;
 }
 
 .bomb-projectile {
@@ -727,6 +612,13 @@ button {
 
 .shot-projectile {
   transform: translate(-50%, -50%) rotate(var(--angle)) scale(var(--scale));
+  animation: projectileSpin var(--spin-duration, 0.34s) linear infinite;
+}
+
+.enemy-projectile {
+  z-index: 27;
+  cursor: crosshair;
+  pointer-events: auto;
 }
 
 .shot-effect {
@@ -740,19 +632,6 @@ button {
   background-repeat: no-repeat;
   background-size: 100% 100%;
   animation: ordnanceFrames var(--effect-duration) steps(var(--effect-steps)) forwards;
-}
-
-.player-hit {
-  position: absolute;
-  z-index: 26;
-  width: 52px;
-  height: 52px;
-  border: 5px solid #ef4f3b;
-  background:
-    linear-gradient(90deg, transparent 0 21px, #fff8e8 22px 30px, transparent 31px 100%),
-    linear-gradient(0deg, transparent 0 21px, #ffd348 22px 30px, transparent 31px 100%);
-  pointer-events: none;
-  animation: playerHitBurst 0.26s steps(3) forwards;
 }
 
 .game-over {
@@ -789,13 +668,23 @@ button {
   font-size: 22px;
 }
 
-@keyframes playerRunBob {
+@keyframes playerFrames {
   from {
-    transform: scale(var(--player-scale)) translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 
   to {
-    transform: scale(var(--player-scale)) translateY(3px);
+    transform: translate3d(var(--sprite-end), 0, 0);
+  }
+}
+
+@keyframes playerChargeFrames {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(var(--charge-end), 0, 0);
   }
 }
 
@@ -805,17 +694,7 @@ button {
   }
 
   to {
-    opacity: 0.55;
-  }
-}
-
-@keyframes destroyerFrames {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(var(--sprite-end), 0, 0);
+    opacity: 0.45;
   }
 }
 
@@ -839,43 +718,170 @@ button {
   }
 }
 
-@keyframes beamFade {
-  0% {
-    opacity: 0;
-    transform: rotate(var(--angle)) scaleX(0.92);
+@keyframes projectileSpin {
+  from {
+    transform: translate(-50%, -50%) rotate(var(--angle)) scale(var(--scale));
   }
 
-  28%,
-  72% {
+  to {
+    transform: translate(-50%, -50%) rotate(calc(var(--angle) + var(--spin-turn, 1turn))) scale(var(--scale));
+  }
+}
+
+@keyframes beamShoot {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+    transform: rotate(var(--angle)) scaleX(0.02);
+  }
+
+  18% {
     opacity: 1;
+    clip-path: inset(0 64% 0 0);
+    transform: rotate(var(--angle)) scaleX(0.34);
+  }
+
+  46% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: rotate(var(--angle)) scaleX(1.02);
+  }
+
+  72% {
+    opacity: 0.9;
+    clip-path: inset(0 0 0 4%);
     transform: rotate(var(--angle)) scaleX(1);
   }
 
   100% {
     opacity: 0;
-    transform: rotate(var(--angle)) scaleX(0.98);
+    clip-path: inset(0 0 0 16%);
+    transform: rotate(var(--angle)) scaleX(0.96);
   }
 }
 
-@keyframes playerHitBurst {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(0.6) rotate(0deg);
+@keyframes beamCoreFlicker {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
   }
 
-  to {
+  18% {
+    opacity: 1;
+    clip-path: inset(0 62% 0 0);
+  }
+
+  46% {
+    opacity: 0.72;
+    clip-path: inset(0 0 0 0);
+  }
+
+  64% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+
+  82% {
+    opacity: 1;
+    clip-path: inset(0 0 0 6%);
+  }
+
+  100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(1.8) rotate(45deg);
+    clip-path: inset(0 0 0 18%);
+  }
+}
+
+@keyframes beamSparkChase {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-12px);
+  }
+
+  24% {
+    opacity: 1;
+    clip-path: inset(0 48% 0 0);
+    transform: translateX(0);
+  }
+
+  70% {
+    opacity: 0.86;
+    clip-path: inset(0 0 0 0);
+    transform: translateX(12px);
+  }
+
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 0 24%);
+    transform: translateX(22px);
+  }
+}
+
+@keyframes beamPulse {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(0) scaleX(0.35);
+  }
+
+  28% {
+    opacity: 1;
+    clip-path: inset(0 12% 0 0);
+    transform: translateX(18%) scaleX(0.9);
+  }
+
+  72% {
+    opacity: 0.82;
+    clip-path: inset(0 0 0 0);
+    transform: translateX(178%) scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 0 70%);
+    transform: translateX(240%) scaleX(0.72);
+  }
+}
+
+@keyframes beamHead {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) scaleX(0.4);
+  }
+
+  34% {
+    opacity: 1;
+    transform: translateX(-36%) scaleX(0.82);
+  }
+
+  76% {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(10px) scaleX(0.68);
+  }
+}
+
+@keyframes tileFloorScroll {
+  to {
+    background-position: calc(0px - var(--floor-strip-width)) 0;
+  }
+}
+
+@keyframes surfaceLineScroll {
+  to {
+    background-position: -4608px 0;
   }
 }
 
 @media (max-height: 620px) {
-  .city-layer-5::before {
-    height: 124px;
-  }
-
-  .player {
-    bottom: 124px;
+  .game {
+    --floor-height: 124px;
+    --floor-strip-width: 794px;
   }
 }
 
