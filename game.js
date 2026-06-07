@@ -8,6 +8,11 @@ const finalScoreText = document.querySelector("#finalScore");
 const gameOverPanel = document.querySelector("#gameOver");
 const restartButton = document.querySelector("#restartButton");
 const gameOverRestartButton = document.querySelector("#gameOverRestartButton");
+const remotePopup = document.querySelector("#remotePopup");
+const remotePopupMessage = document.querySelector("#remotePopupMessage");
+const remotePopupClose = document.querySelector("#remotePopupClose");
+
+const SOCKET_SERVER_URL = "https://TU-SERVIDOR-RENDER.onrender.com";
 
 const maxLives = 5;
 const maxTargets = 4;
@@ -1128,8 +1133,39 @@ function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function showRemotePopup(message) {
+  remotePopupMessage.textContent = message || "";
+  remotePopup.hidden = false;
+}
+
+function hideRemotePopup() {
+  remotePopup.hidden = true;
+}
+
+function setupRemotePopupSocket() {
+  if (typeof io !== "function") {
+    console.warn("[socket] Socket.IO client is not available");
+    return;
+  }
+
+  const socket = io(SOCKET_SERVER_URL);
+
+  socket.on("popup:show", (data = {}) => {
+    showRemotePopup(data.message);
+  });
+
+  socket.on("popup:hide", () => {
+    hideRemotePopup();
+  });
+
+  socket.on("connect_error", (error) => {
+    console.warn("[socket] connection error:", error.message);
+  });
+}
+
 restartButton.addEventListener("click", startGame);
 gameOverRestartButton.addEventListener("click", startGame);
+remotePopupClose.addEventListener("click", hideRemotePopup);
 playArea.addEventListener("pointerdown", (event) => {
   if (event.target !== playArea) {
     return;
@@ -1146,4 +1182,5 @@ document.querySelectorAll(".city-track img").forEach((image) => {
   image.addEventListener("load", updateParallaxMetrics, { once: true });
 });
 
+setupRemotePopupSocket();
 startGame();

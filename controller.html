@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Murderbot Popup Controller</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --panel: rgba(18, 18, 18, 0.94);
+        --panel-strong: #101010;
+        --orange: #ff5a00;
+        --orange-soft: rgba(255, 90, 0, 0.18);
+        --white: #ffffff;
+        --muted: rgba(255, 255, 255, 0.68);
+        --line: rgba(255, 90, 0, 0.62);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        min-height: 100svh;
+        color: var(--white);
+        background:
+          radial-gradient(circle at 16% 8%, rgba(255, 90, 0, 0.16), transparent 32%),
+          linear-gradient(135deg, #111 0%, #050505 48%, #150700 100%);
+        font-family: Arial, Helvetica, sans-serif;
+        overflow-x: hidden;
+      }
+
+      .controller {
+        width: min(920px, 100%);
+        min-height: 100svh;
+        margin: 0 auto;
+        padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
+          max(22px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+        display: grid;
+        align-content: center;
+        gap: 18px;
+      }
+
+      .shell {
+        display: grid;
+        gap: 18px;
+        padding: clamp(18px, 4vw, 34px);
+        background: linear-gradient(180deg, rgba(22, 22, 22, 0.96), rgba(4, 4, 4, 0.96));
+        border: 2px solid var(--line);
+        box-shadow: 0 0 0 4px #000, 0 24px 70px rgba(0, 0, 0, 0.72);
+      }
+
+      .brand {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .brand-logo {
+        width: min(330px, 58vw);
+        height: auto;
+        display: block;
+      }
+
+      .patch {
+        width: clamp(68px, 13vw, 118px);
+        aspect-ratio: 1;
+        object-fit: contain;
+        padding: 8px;
+        background: #fff;
+        border: 2px solid var(--orange);
+      }
+
+      .status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        background: var(--panel-strong);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 32px;
+        color: var(--muted);
+        font-size: clamp(15px, 2vw, 18px);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .status-dot {
+        width: 14px;
+        height: 14px;
+        flex: 0 0 14px;
+        border-radius: 50%;
+        background: #7b1d12;
+        box-shadow: 0 0 14px rgba(255, 64, 0, 0.35);
+      }
+
+      .status.is-connected {
+        color: var(--white);
+      }
+
+      .status.is-connected .status-dot {
+        background: var(--orange);
+        box-shadow: 0 0 18px rgba(255, 90, 0, 0.95);
+      }
+
+      .server-url {
+        min-width: 0;
+        color: var(--muted);
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .fields {
+        display: grid;
+        gap: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        color: var(--muted);
+        font-size: clamp(16px, 2.3vw, 19px);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      input {
+        width: 100%;
+        min-height: 64px;
+        padding: 0 18px;
+        color: var(--white);
+        background: #070707;
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        border-radius: 0;
+        font: 700 clamp(20px, 3.4vw, 28px) / 1.2 Arial, Helvetica, sans-serif;
+        outline: none;
+      }
+
+      input:focus {
+        border-color: var(--orange);
+        box-shadow: 0 0 0 4px var(--orange-soft);
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      button {
+        min-height: 82px;
+        padding: 18px;
+        color: #fff;
+        background: var(--orange);
+        border: 0;
+        border-radius: 0;
+        font: 900 clamp(20px, 3.3vw, 31px) / 1 Arial, Helvetica, sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        box-shadow: inset 0 -7px 0 rgba(0, 0, 0, 0.34), 0 10px 0 #000;
+        touch-action: manipulation;
+      }
+
+      button:active {
+        transform: translateY(4px);
+        box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.34), 0 5px 0 #000;
+      }
+
+      .button-secondary {
+        color: var(--white);
+        background: #181818;
+        border: 2px solid var(--orange);
+      }
+
+      .hint {
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(14px, 2vw, 17px);
+        line-height: 1.45;
+      }
+
+      @media (max-width: 700px) {
+        .brand {
+          grid-template-columns: 1fr;
+          justify-items: start;
+        }
+
+        .actions {
+          grid-template-columns: 1fr;
+        }
+
+        .patch {
+          display: none;
+        }
+      }
+
+      @media (orientation: landscape) and (max-height: 820px) {
+        .controller {
+          align-content: start;
+          padding-top: 14px;
+          padding-bottom: 14px;
+        }
+
+        .shell {
+          gap: 12px;
+          padding: 16px 24px;
+        }
+
+        .brand-logo {
+          width: min(260px, 42vw);
+        }
+
+        .patch {
+          width: 76px;
+          padding: 5px;
+        }
+
+        .status-row {
+          padding: 9px 12px;
+        }
+
+        .fields {
+          gap: 12px;
+        }
+
+        input {
+          min-height: 54px;
+        }
+
+        button {
+          min-height: 66px;
+        }
+
+        .hint {
+          font-size: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="controller">
+      <section class="shell" aria-label="Control del popup">
+        <header class="brand">
+          <img class="brand-logo" src="assets/controller/murderbot-logo.png" alt="Murderbot" />
+          <img class="patch" src="assets/controller/corporate-rim-patch.webp" alt="" aria-hidden="true" />
+        </header>
+
+        <div class="status-row">
+          <div id="connectionStatus" class="status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="connectionStatusText">Desconectado</span>
+          </div>
+          <div class="server-url" id="serverUrlText"></div>
+        </div>
+
+        <form class="fields" id="popupForm">
+          <label for="messageInput">
+            Mensaje del popup
+            <input
+              id="messageInput"
+              name="message"
+              type="text"
+              autocomplete="off"
+              placeholder="Texto que vera la tablet del juego"
+            />
+          </label>
+
+          <label for="tokenInput">
+            Token secreto
+            <input
+              id="tokenInput"
+              name="token"
+              type="password"
+              autocomplete="current-password"
+              placeholder="CONTROL_TOKEN"
+            />
+          </label>
+
+          <div class="actions">
+            <button id="showPopupButton" type="submit">Mostrar popup</button>
+            <button id="hidePopupButton" class="button-secondary" type="button">Ocultar popup</button>
+          </div>
+        </form>
+
+        <p class="hint">
+          El token se guarda solo en este dispositivo. Cambia SOCKET_SERVER_URL en este archivo cuando tengas la URL real del servidor.
+        </p>
+      </section>
+    </main>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+      const SOCKET_SERVER_URL = "https://TU-SERVIDOR-RENDER.onrender.com";
+      const TOKEN_STORAGE_KEY = "murderbot-popup-control-token";
+
+      const socket = io(SOCKET_SERVER_URL);
+      const popupForm = document.querySelector("#popupForm");
+      const messageInput = document.querySelector("#messageInput");
+      const tokenInput = document.querySelector("#tokenInput");
+      const hidePopupButton = document.querySelector("#hidePopupButton");
+      const connectionStatus = document.querySelector("#connectionStatus");
+      const connectionStatusText = document.querySelector("#connectionStatusText");
+      const serverUrlText = document.querySelector("#serverUrlText");
+
+      serverUrlText.textContent = SOCKET_SERVER_URL;
+      tokenInput.value = localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+
+      function getToken() {
+        return tokenInput.value.trim();
+      }
+
+      function setConnectionState(isConnected, label) {
+        connectionStatus.classList.toggle("is-connected", isConnected);
+        connectionStatusText.textContent = label;
+      }
+
+      tokenInput.addEventListener("input", () => {
+        localStorage.setItem(TOKEN_STORAGE_KEY, getToken());
+      });
+
+      popupForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const token = getToken();
+        const message = messageInput.value.trim();
+
+        socket.emit("popup:show", { token, message });
+      });
+
+      hidePopupButton.addEventListener("click", () => {
+        const token = getToken();
+
+        socket.emit("popup:hide", { token });
+      });
+
+      socket.on("connect", () => {
+        setConnectionState(true, "Conectado");
+      });
+
+      socket.on("disconnect", () => {
+        setConnectionState(false, "Desconectado");
+      });
+
+      socket.on("connect_error", () => {
+        setConnectionState(false, "Desconectado");
+      });
+    </script>
+  </body>
+</html>

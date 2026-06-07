@@ -668,6 +668,52 @@ button {
   font-size: 22px;
 }
 
+.remote-popup {
+  position: absolute;
+  z-index: 120;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  background: rgba(0, 0, 0, 0.72);
+  pointer-events: auto;
+}
+
+.remote-popup[hidden] {
+  display: none;
+}
+
+.remote-popup__panel {
+  width: min(620px, 88vw);
+  max-height: 72vh;
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  padding: clamp(20px, 4vw, 34px);
+  overflow: auto;
+  color: #fff8e8;
+  text-align: center;
+  background: rgba(7, 10, 18, 0.94);
+  border: 2px solid #ef4f3b;
+  box-shadow: 0 0 0 4px #000, 0 18px 48px rgba(0, 0, 0, 0.7);
+}
+
+.remote-popup__panel p {
+  max-width: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(22px, 4vw, 38px);
+  line-height: 1.25;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.remote-popup__close {
+  min-width: 156px;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
 @keyframes playerFrames {
   from {
     transform: translate3d(0, 0, 0);
