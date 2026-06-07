@@ -12,7 +12,7 @@ const remotePopup = document.querySelector("#remotePopup");
 const remotePopupMessage = document.querySelector("#remotePopupMessage");
 const remotePopupClose = document.querySelector("#remotePopupClose");
 
-const SOCKET_SERVER_URL = "https://TU-SERVIDOR-RENDER.onrender.com";
+const SOCKET_SERVER_URL = "https://pinlee-game2.onrender.com/";
 
 const maxLives = 5;
 const maxTargets = 4;
