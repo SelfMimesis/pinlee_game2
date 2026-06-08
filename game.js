@@ -11,6 +11,7 @@ const gameOverRestartButton = document.querySelector("#gameOverRestartButton");
 const remotePopup = document.querySelector("#remotePopup");
 const remotePopupMessage = document.querySelector("#remotePopupMessage");
 const remotePopupClose = document.querySelector("#remotePopupClose");
+const fullscreenHotspot = document.querySelector("#fullscreenHotspot");
 
 const SOCKET_SERVER_URL = "https://pinlee-game2.onrender.com/";
 
@@ -1142,6 +1143,27 @@ function hideRemotePopup() {
   remotePopup.hidden = true;
 }
 
+function requestGameFullscreen() {
+  if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+    return;
+  }
+
+  const requestFullscreen =
+    game.requestFullscreen ||
+    game.webkitRequestFullscreen ||
+    game.msRequestFullscreen;
+
+  if (!requestFullscreen) {
+    return;
+  }
+
+  const fullscreenRequest = requestFullscreen.call(game);
+
+  if (fullscreenRequest && typeof fullscreenRequest.catch === "function") {
+    fullscreenRequest.catch(() => {});
+  }
+}
+
 function setupRemotePopupSocket() {
   if (typeof io !== "function") {
     console.warn("[socket] Socket.IO client is not available");
@@ -1166,6 +1188,11 @@ function setupRemotePopupSocket() {
 restartButton.addEventListener("click", startGame);
 gameOverRestartButton.addEventListener("click", startGame);
 remotePopupClose.addEventListener("click", hideRemotePopup);
+fullscreenHotspot.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  requestGameFullscreen();
+});
 playArea.addEventListener("pointerdown", (event) => {
   if (event.target !== playArea) {
     return;

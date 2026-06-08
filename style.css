@@ -177,6 +177,22 @@ button {
   user-select: none;
 }
 
+.fullscreen-hotspot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 80;
+  width: calc(72px + env(safe-area-inset-right));
+  height: calc(72px + env(safe-area-inset-top));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
 .hud {
   position: absolute;
   z-index: 60;
